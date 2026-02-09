@@ -1,0 +1,14 @@
+[project]
+name = "pyclaudefig"
+version = "0.1.0"
+description = "Opinionated Claude Code configuration for Python repositories built on the Astral ecosystem (ruff, uv, ty)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydoclint>=0.8.3",
+    "pytest>=9.0.2",
+    "pytest-check>=2.6.2",
+    "pyyaml>=6.0.3",
+    "ruff>=0.15.0",
+    "ty>=0.0.15",
+]
