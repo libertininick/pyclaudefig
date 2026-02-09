@@ -1,0 +1,372 @@
+{
+  "description": "Claude Code configuration manifest",
+  "version": "1.1.0",
+  "skills": [
+    {
+      "name": "class-design",
+      "category": "conventions",
+      "description": "Class design, composition, inheritance",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "code-organization",
+      "category": "conventions",
+      "description": "Module structure, imports, file layouts",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "complexity-refactoring",
+      "category": "conventions",
+      "description": "Extracting helper functions when C901 exceeded",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "data-structures",
+      "category": "conventions",
+      "description": "Pydantic models vs dataclasses guidance",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "docstring-conventions",
+      "category": "conventions",
+      "description": "Google-style docstrings",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "explore-project",
+      "category": "utilities",
+      "description": "Explore project structure to understand layout, packages, and key files",
+      "user_invocable": true,
+      "version": "1.0.0"
+    },
+    {
+      "name": "frameworks",
+      "category": "conventions",
+      "description": "Approved frameworks and libraries with Context7 IDs",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "function-design",
+      "category": "conventions",
+      "description": "Function signatures, parameters, return types",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "maintainability",
+      "category": "assessment",
+      "description": "Readability, change tolerance, hidden assumptions",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "naming-conventions",
+      "category": "conventions",
+      "description": "Function, class, variable naming patterns",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "plan-template",
+      "category": "templates",
+      "description": "Implementation plan format and examples",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "pr-description-template",
+      "category": "templates",
+      "description": "PR description format and examples",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "pythonic-conventions",
+      "category": "conventions",
+      "description": "Comprehensions, built-ins, context managers",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "review-template",
+      "category": "templates",
+      "description": "Code review format and severity guidance",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "run-python-safely",
+      "category": "utilities",
+      "description": "Execute Python code safely via AST analysis",
+      "user_invocable": true,
+      "version": "1.1.0"
+    },
+    {
+      "name": "skill-template",
+      "category": "templates",
+      "description": "Skill structure, frontmatter, and writing guidelines",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "test-quality",
+      "category": "assessment",
+      "description": "Test quality assessment for reviewing tests",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "test-writing",
+      "category": "conventions",
+      "description": "Pytest conventions, fixtures, parametrization",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "testability",
+      "category": "assessment",
+      "description": "Dependency injection, global state, pure functions",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "type-hints",
+      "category": "conventions",
+      "description": "Type annotations, generics, protocols",
+      "user_invocable": false,
+      "version": "1.1.0"
+    },
+    {
+      "name": "validate-code",
+      "category": "utilities",
+      "description": "Run code validation checks (lint, format, type, docstring, test)",
+      "user_invocable": true,
+      "version": "1.0.0"
+    },
+    {
+      "name": "validate-manifest",
+      "category": "utilities",
+      "description": "Validate manifest.json structure and references",
+      "user_invocable": false,
+      "version": "1.0.0"
+    },
+    {
+      "name": "write-markdown-output",
+      "category": "utilities",
+      "description": "Write timestamped markdown files to agent output directories",
+      "user_invocable": false,
+      "version": "1.0.0"
+    }
+  ],
+  "agents": [
+    {
+      "name": "code-cleaner",
+      "description": "Cleans and organizes Python code",
+      "model": "opus",
+      "version": "1.1.0",
+      "depends_on_skills": [
+        "code-organization",
+        "naming-conventions",
+        "function-design",
+        "class-design",
+        "pythonic-conventions",
+        "complexity-refactoring",
+        "docstring-conventions",
+        "type-hints",
+        "maintainability",
+        "testability",
+        "validate-code"
+      ]
+    },
+    {
+      "name": "code-style-reviewer",
+      "description": "Reviews style and conventions",
+      "model": "sonnet",
+      "version": "1.1.0",
+      "depends_on_skills": [
+        "code-organization",
+        "naming-conventions",
+        "docstring-conventions",
+        "pythonic-conventions",
+        "type-hints",
+        "function-design",
+        "class-design",
+        "review-template"
+      ]
+    },
+    {
+      "name": "code-substance-reviewer",
+      "description": "Reviews design and correctness",
+      "model": "opus",
+      "version": "1.1.0",
+      "depends_on_skills": [
+        "class-design",
+        "function-design",
+        "maintainability",
+        "testability",
+        "review-template"
+      ]
+    },
+    {
+      "name": "planner",
+      "description": "Creates implementation plans",
+      "model": "opus",
+      "version": "1.1.0",
+      "depends_on_skills": [
+        "plan-template",
+        "write-markdown-output",
+        "frameworks",
+        "code-organization",
+        "data-structures",
+        "function-design",
+        "class-design",
+        "testability",
+        "maintainability",
+        "naming-conventions",
+        "test-writing"
+      ]
+    },
+    {
+      "name": "python-code-writer",
+      "description": "Writes production code",
+      "model": "sonnet",
+      "version": "1.2.0",
+      "depends_on_skills": [
+        "frameworks",
+        "code-organization",
+        "naming-conventions",
+        "function-design",
+        "class-design",
+        "data-structures",
+        "type-hints",
+        "pythonic-conventions",
+        "docstring-conventions",
+        "testability",
+        "maintainability",
+        "complexity-refactoring",
+        "run-python-safely",
+        "validate-code"
+      ]
+    },
+    {
+      "name": "python-test-writer",
+      "description": "Writes tests",
+      "model": "sonnet",
+      "version": "1.2.0",
+      "depends_on_skills": [
+        "test-writing",
+        "frameworks",
+        "naming-conventions",
+        "docstring-conventions",
+        "run-python-safely",
+        "validate-code"
+      ]
+    },
+    {
+      "name": "test-reviewer",
+      "description": "Reviews test quality and coverage",
+      "model": "opus",
+      "version": "1.1.0",
+      "depends_on_skills": [
+        "test-quality",
+        "test-writing",
+        "review-template",
+        "validate-code"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "add-framework",
+      "description": "Add a new approved framework",
+      "version": "1.0.0",
+      "depends_on_skills": [
+        "frameworks",
+        "validate-manifest"
+      ]
+    },
+    {
+      "name": "clean",
+      "description": "Clean Python code files",
+      "version": "1.1.0",
+      "depends_on_agents": [
+        "code-cleaner"
+      ]
+    },
+    {
+      "name": "create-skill",
+      "description": "Create a new Claude Code skill",
+      "version": "1.0.0",
+      "depends_on_skills": [
+        "skill-template",
+        "validate-manifest"
+      ]
+    },
+    {
+      "name": "implement",
+      "description": "Execute plan phases",
+      "version": "1.3.0",
+      "depends_on_agents": [
+        "python-code-writer",
+        "python-test-writer",
+        "code-cleaner"
+      ]
+    },
+    {
+      "name": "plan",
+      "description": "Create implementation plan",
+      "version": "1.0.0",
+      "depends_on_agents": [
+        "planner"
+      ]
+    },
+    {
+      "name": "pr-description",
+      "description": "Generate PR description",
+      "version": "1.0.0",
+      "depends_on_skills": [
+        "pr-description-template",
+        "write-markdown-output"
+      ]
+    },
+    {
+      "name": "review",
+      "description": "Unified code review (source + tests)",
+      "version": "2.1.0",
+      "depends_on_agents": [
+        "code-style-reviewer",
+        "code-substance-reviewer",
+        "test-reviewer"
+      ],
+      "depends_on_skills": [
+        "review-template",
+        "write-markdown-output"
+      ]
+    },
+    {
+      "name": "sync",
+      "description": "Sync Claude context files with skills, agents, and commands on disk",
+      "version": "1.0.0"
+    },
+    {
+      "name": "update-plan",
+      "description": "Sync plan with main and create versioned update",
+      "version": "2.0.0",
+      "depends_on_skills": [
+        "plan-template"
+      ]
+    }
+  ],
+  "categories": {
+    "conventions": "Coding standards that define how code should be written",
+    "assessment": "Criteria used by reviewers to assess code quality",
+    "templates": "Format specifications for agent outputs",
+    "utilities": "Tools and scripts for common operations"
+  }
+}
