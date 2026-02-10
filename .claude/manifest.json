@@ -14,7 +14,7 @@
       "category": "conventions",
       "description": "Module structure, imports, file layouts",
       "user_invocable": false,
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "name": "complexity-refactoring",
@@ -161,7 +161,7 @@
       "category": "utilities",
       "description": "Write timestamped markdown files to agent output directories",
       "user_invocable": false,
-      "version": "1.0.0"
+      "version": "1.1.0"
     }
   ],
   "agents": [

@@ -22,7 +22,12 @@ Guidance for Claude Code when working in this repository.
 > Exceptions: `uv run pytest`, `ruff`, `ty check`, `uv run python .claude/scripts/validate_code.py`, other standard CLI tools.
 
 1. **Approved frameworks only** - Use `frameworks` skill; never substitute alternatives
-2. **Apply convention skills** - Skills provide coding standards
+2. **Load convention skills before editing code** - Before writing, moving, or restructuring Python code, read the relevant skill files from `.claude/skills/`:
+   - Moving/reorganizing code → `code-organization/SKILL.md`
+   - Writing/modifying functions → `function-design/SKILL.md`
+   - Writing/modifying classes → `class-design/SKILL.md`, `class-design/rules.md`
+   - Naming anything → `naming-conventions/SKILL.md`
+   - Refactoring complex code → `complexity-refactoring/SKILL.md`
 3. **Fetch docs when uncertain** - Use Context7 MCP (see `frameworks` skill for IDs)
 4. **Use specialized agents** - See Agents section
 5. **Never hallucinate** - Ask if uncertain about paths, modules, or APIs

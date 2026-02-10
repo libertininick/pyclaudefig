@@ -1,7 +1,7 @@
 ---
 name: code-organization
-version: 1.0.0
-description: Python code organization conventions for this codebase. Apply when structuring modules, organizing imports, and designing file layouts. Use PROACTIVELY when users request to check code organization or wants to clean up and reorganize a module.
+version: 1.1.0
+description: Python code organization conventions for this codebase. Apply when structuring modules, organizing imports, designing file layouts, or moving functions/classes within or between files. Use PROACTIVELY when users request to check code organization, move code, or clean up and reorganize a module.
 user-invocable: false
 ---
 
@@ -76,6 +76,50 @@ def process_data(data: Data) -> Result:
 def _validate_inputs(data: Data) -> None:
     """Validate inputs."""
     ...
+```
+
+### Class vs. Module-Level Private Helpers
+
+**Rule**: A private helper function that does NOT access `self` or `cls` MUST be a
+module-level function, never a `@staticmethod` or instance method. This applies even
+when the function is only called by methods of a single class.
+
+This follows from two conventions:
+1. **Avoid static methods** (`class-design` skill) — use module-level functions instead
+2. **Public-before-private ordering** — module-level private helpers go after the class
+
+```python
+# CORRECT - module-level private helper after the class
+class DataProcessor:
+    def process(self, data: Data) -> Result:
+        validated = _validate_data(data)
+        return Result(validated)
+
+
+def _validate_data(data: Data) -> Data:
+    """Validate and normalize input data."""
+    ...
+
+
+# INCORRECT - staticmethod (avoid per class-design conventions)
+class DataProcessor:
+    def process(self, data: Data) -> Result:
+        validated = self._validate_data(data)
+        return Result(validated)
+
+    @staticmethod
+    def _validate_data(data: Data) -> Data:
+        ...
+
+
+# INCORRECT - instance method that doesn't use self
+class DataProcessor:
+    def process(self, data: Data) -> Result:
+        validated = self._validate_data(data)
+        return Result(validated)
+
+    def _validate_data(self, data: Data) -> Data:
+        ...
 ```
 
 ### Module Size Rules
