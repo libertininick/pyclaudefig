@@ -214,6 +214,16 @@
       ]
     },
     {
+      "name": "config-learner",
+      "description": "Analyzes user feedback and iteratively improves Claude Code configuration. Updates skills, agents, commands, and CLAUDE.md based on what went well or poorly.",
+      "model": "opus",
+      "version": "1.0.0",
+      "depends_on_skills": [
+        "skill-template",
+        "validate-manifest"
+      ]
+    },
+    {
       "name": "planner",
       "description": "Creates implementation plans",
       "model": "opus",
@@ -316,6 +326,17 @@
         "python-code-writer",
         "python-test-writer",
         "code-cleaner"
+      ]
+    },
+    {
+      "name": "learn",
+      "description": "Learn from feedback and iteratively improve Claude Code configuration",
+      "version": "1.0.0",
+      "depends_on_agents": [
+        "config-learner"
+      ],
+      "depends_on_skills": [
+        "validate-manifest"
       ]
     },
     {

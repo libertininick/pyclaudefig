@@ -14,6 +14,7 @@ A structured approach for working with Claude Code in this repository using spec
 - [Phase 4: Update Plan with `/update-plan`](#phase-4-update-plan-with-update-plan)
 - [Phase 5: Iterate Until Complete](#phase-5-iterate-until-complete)
 - [Phase 6: Final Review and PR](#phase-6-final-review-and-pr)
+- [Learning from Mistakes with `/learn`](#learning-from-mistakes-with-learn)
 - [Quick Reference: Commands](#quick-reference-commands)
 - [Agents and Their Roles](#agents-and-their-roles)
 - [Validation Commands](#validation-commands)
@@ -98,12 +99,21 @@ This repository is configured with specialized agents and commands that automate
 │                                                                             │
 │    /review --commits main..HEAD ──▶ /pr-description ──▶ Open PR             │
 └─────────────────────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  CONTINUOUS: LEARN FROM FEEDBACK                                             │
+│                                                                             │
+│    /learn <feedback> ──▶ Propose config changes ──▶ Apply (after approval)  │
+│                                                                             │
+│    Run anytime during or after a session to improve future behavior.         │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Key components:**
-- **7 specialized agents** with appropriate models and context bundles
-- **8 commands** that orchestrate agent workflows
-- **20 skills** that define coding conventions and standards
+- **8 specialized agents** with appropriate models and context bundles
+- **10 commands** that orchestrate agent workflows
+- **22 skills** that define coding conventions and standards
 - **Automatic outputs** saved to `.claude/agent-outputs/`
 
 [Back to top](#top)
@@ -438,6 +448,48 @@ This creates a structured PR description at `.claude/agent-outputs/pr-descriptio
 
 ---
 
+## Learning from Mistakes with `/learn`
+
+![edit-claude](images/ruthlessly-edit-claude.png)
+
+The `/learn` command closes the feedback loop. When Claude does something poorly (or well), tell it — and the configuration updates so it doesn't repeat the mistake (or keeps doing the right thing).
+
+**Command syntax:**
+```
+/learn <feedback>
+/learn <feedback> --no-session
+```
+
+**What happens:**
+
+1. The **config-learner agent** analyzes your feedback alongside the current conversation context
+2. It reads the existing configuration (skills, agents, commands, CLAUDE.md) to understand the landscape
+3. It checks for contradictions with existing rules and surfaces any conflicts
+4. It proposes targeted changes — updating an existing skill, adding a Critical Rule, or creating a new skill/agent
+5. You review and approve the changes before they're applied
+6. After applying, it syncs the manifest, regenerates bundles, and validates
+
+**When to use it:**
+
+- **After a mistake**: Claude forgot to run tests, used the wrong pattern, or over-engineered something
+- **After a good session**: Claude did something well that you want to reinforce as a permanent convention
+- **For new patterns**: You want Claude to learn a team convention or workflow it doesn't know yet
+- **Anytime**: Unlike other commands, `/learn` isn't tied to a specific workflow phase — use it whenever you have feedback
+
+**Examples:**
+```
+/learn You kept using Optional[str] instead of str | None. Enforce the modern union syntax.
+/learn You over-engineered the parser. On first pass, produce focused minimal implementations.
+/learn Always run tests before claiming a task is done. --no-session
+/learn Learn how to write database migration scripts following our team's conventions.
+```
+
+The `--no-session` flag excludes conversation context, useful for narrow, general-purpose learnings that don't need session history.
+
+[Back to top](#top)
+
+---
+
 ## Quick Reference: Commands
 
 | Command | Purpose | Output Location |
@@ -449,6 +501,7 @@ This creates a structured PR description at `.claude/agent-outputs/pr-descriptio
 | `/review --tests-only` | Test quality review only | `agent-outputs/reviews/` |
 | `/update-plan <path>` | Sync plan with reality | New versioned plan file |
 | `/pr-description` | Generate PR description | `agent-outputs/pr-descriptions/` |
+| `/learn <feedback>` | Improve config from feedback | Updated skills, agents, CLAUDE.md |
 | `/create-skill` | Scaffold new skill | `skills/<name>/` |
 | `/sync` | Regenerate CLAUDE.md and bundles | Various config files |
 
@@ -467,6 +520,7 @@ This creates a structured PR description at `.claude/agent-outputs/pr-descriptio
 | **code-substance-reviewer** | `/review` | Design, correctness, maintainability |
 | **test-reviewer** | `/review` | Test quality, coverage completeness, assertions |
 | **code-cleaner** | `/implement`, `/clean` | Code organization, simplification |
+| **config-learner** | `/learn` | Skill templates, manifest validation |
 
 Each agent loads a **context bundle**—pre-composed skill content that gives it exactly the knowledge it needs.
 
@@ -513,6 +567,8 @@ See the `validate-code` skill for full usage and flags.
 
 8. **Outputs are saved:** Plans, reviews, and PR descriptions persist in `agent-outputs/` for reference.
 
+9. **Teach, don't repeat:** When Claude makes the same mistake twice, use `/learn` to update the configuration rather than correcting it again manually. Every `/learn` invocation makes all future sessions better.
+
 [Back to top](#top)
 
 ---
@@ -534,6 +590,11 @@ See the `validate-code` skill for full usage and flags.
 **Review finds many issues:**
 - `/implement` should auto-fix critical issues
 - For persistent problems, the plan may need revision
+
+**Claude keeps repeating the same mistake:**
+- Use `/learn` with specific feedback about what went wrong
+- The config-learner agent will propose skill or CLAUDE.md changes to prevent recurrence
+- For session-specific issues, run `/learn` within the same session so it has full context
 
 **Need a new skill or convention:**
 - Use `/create-skill` to scaffold

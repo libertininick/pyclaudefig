@@ -389,6 +389,17 @@ Run `/add-framework --help` for more examples.
    /sync
    ```
 
+### Teaching Claude from Feedback
+
+Use `/learn` to turn mistakes (or good patterns) into permanent configuration changes:
+
+```sh
+/learn You kept using Optional[str] instead of str | None. Enforce the modern union syntax.
+/learn Always run tests before claiming a task is done. --no-session
+```
+
+The `config-learner` agent analyzes your feedback, proposes targeted changes to skills, CLAUDE.md, or agent instructions, and applies them after your approval. See [Learning from Mistakes](usage-guides/agentic-coding-workflow.md#learning-from-mistakes-with-learn) for the full guide.
+
 ### Modifying Conventions
 
 1. **Edit the skill's SKILL.md** (and rules.md/examples.md if layered)

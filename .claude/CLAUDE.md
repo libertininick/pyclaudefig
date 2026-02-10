@@ -41,6 +41,7 @@ Reusable workflows in `.claude/commands/`. See each file for details.
 | `/clean` | Clean Python code files |
 | `/create-skill` | Create a new Claude Code skill |
 | `/implement` | Execute plan phases |
+| `/learn` | Learn from feedback and iteratively improve Claude Code configuration |
 | `/plan` | Create implementation plan |
 | `/pr-description` | Generate PR description |
 | `/review` | Unified code review (source + tests) |
@@ -59,6 +60,7 @@ Specialized sub-agents in `.claude/agents/`. See each file for details.
 | `code-cleaner` | Cleans and organizes Python code |
 | `code-style-reviewer` | Reviews style and conventions |
 | `code-substance-reviewer` | Reviews design and correctness |
+| `config-learner` | Analyzes user feedback and iteratively improves Claude Code configuration. Updates skills, agents, commands, and CLAUDE.md based on what went well or poorly. |
 | `planner` | Creates implementation plans |
 | `python-code-writer` | Writes production code |
 | `python-test-writer` | Writes tests |
@@ -76,6 +78,7 @@ Pre-composed skill content for agents. Bundles provide exactly the context each 
 | `code-cleaner` | `bundles/code-cleaner.md` | `bundles/code-cleaner-compact.md` |
 | `code-style-reviewer` | `bundles/code-style-reviewer.md` | `bundles/code-style-reviewer-compact.md` |
 | `code-substance-reviewer` | `bundles/code-substance-reviewer.md` | `bundles/code-substance-reviewer-compact.md` |
+| `config-learner` | `bundles/config-learner.md` | `bundles/config-learner-compact.md` |
 | `planner` | `bundles/planner.md` | `bundles/planner-compact.md` |
 | `python-code-writer` | `bundles/python-code-writer.md` | `bundles/python-code-writer-compact.md` |
 | `python-test-writer` | `bundles/python-test-writer.md` | `bundles/python-test-writer-compact.md` |
