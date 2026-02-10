@@ -19,7 +19,17 @@ This configuration assumes you already have:
 
 ### Setup
 
-1. **Copy [`.claude/`](.claude/)** into your project root
+1. **Download [`.claude/`](.claude/)** into your project root
+
+    ```sh
+    cd /path/to/your/project
+
+    # Download pyclaudefig
+    curl -L https://api.github.com/repos/libertininick/pyclaudefig/tarball/HEAD | tar -xz
+
+    # Move .claude directory to root of project and remove remaining items from download
+    mv libertininick-pyclaudefig-*/.claude ./ && rm -rf libertininick-pyclaudefig-*
+    ```
 
 2. **Connect the Context7 MCP server** to Claude Code
 
