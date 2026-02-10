@@ -102,11 +102,11 @@ This repository is configured with specialized agents and commands that automate
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  CONTINUOUS: LEARN FROM FEEDBACK                                             │
+│  CONTINUOUS: LEARN FROM FEEDBACK                                            │
 │                                                                             │
 │    /learn <feedback> ──▶ Propose config changes ──▶ Apply (after approval)  │
 │                                                                             │
-│    Run anytime during or after a session to improve future behavior.         │
+│    Run anytime during or after a session to improve future behavior.        │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
