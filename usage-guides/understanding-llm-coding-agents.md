@@ -1,5 +1,7 @@
 # Understanding Your AI Coding Agent: Some Assembly Require
 
+![some-assembly-required](images/coding-agent-assembly.png)
+
 AI coding agents feel like magic. You describe a feature, and the agent writes code, runs tests, reads the errors, fixes the bugs, and iterates until everything passes (usually). It looks like thinking. It looks like understanding. And sometimes it feels like gambling.
 
 That gambling feeling comes from not understanding the machine. Once you grok the mechanisms driving AI coding agents, you'll use these tools far more effectively.
