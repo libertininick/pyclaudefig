@@ -1,6 +1,6 @@
 ---
 name: code-organization
-version: 1.0.0
+version: 1.1.0
 description: Python code organization conventions for this codebase. Apply when structuring modules, organizing imports, designing file layouts, or moving functions/classes within or between files. Use PROACTIVELY when users request to check code organization, move code, or clean up and reorganize a module.
 user-invocable: false
 ---
