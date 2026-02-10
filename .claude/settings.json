@@ -13,7 +13,7 @@
       "Bash(uv run ruff check:*)",
       "Bash(uv run ruff format:*)",
       "Bash(uv run ty check:*)",
-      "Bash(mkdir -p .claude/agent-outputs:*)",
+      "Bash(mkdir -p .claude/agent-outputs/:*)",
       "Bash(mkdir -p .claude/skills/:*)",
       "Bash(uv run python .claude/scripts/generate_bundles.py:*)",
       "Bash(uv run python .claude/scripts/sync_context.py:*)",
@@ -24,7 +24,8 @@
 
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
-      "Read(.claude/agent-outputs/**/*.md)"
+      "Read(.claude/agent-outputs/:*)",
+      "Write(.claude/agent-outputs/:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
