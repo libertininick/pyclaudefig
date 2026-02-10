@@ -54,9 +54,11 @@ Before writing any plan:
 ### 5. Write the Plan
 Use `write-markdown-output` skill:
 ```bash
+# Step 1: Use Write tool to save plan content to /tmp/output-content.md
+# Step 2: Invoke script with -f
 uv run python .claude/scripts/write_markdown_output.py \
     -s "<scope>-plan" \
-    -c "<plan-content>" \
+    -f /tmp/output-content.md \
     -o ".claude/agent-outputs/plans"
 ```
 

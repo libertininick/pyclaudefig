@@ -6,13 +6,17 @@ files with UTC timestamps in the filename, following the repository's
 naming conventions.
 
 Example usage:
-    Write content to a plan file::
+    Write content from a file (recommended)
 
-        python write_markdown_output.py -s "sql-validation-plan" -c "# Plan" -o ".claude/agent-outputs/plans"
+    ```sh
+    python write_markdown_output.py -s "sql-validation-plan" -f /tmp/output-content.md -o ".claude/agent-outputs/plans"
+    ```
 
-    Write content to a review file::
+    Write content from a CLI argument (simple content only)
 
-        python write_markdown_output.py -s "parser-review" -c "# Review" -o ".claude/agent-outputs/reviews"
+    ```sh
+    python write_markdown_output.py -s "parser-review" -c "# Review" -o ".claude/agent-outputs/reviews"
+    ```
 
 Exit codes:
     0: File written successfully
@@ -121,9 +125,10 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
+        content = _resolve_content(args)
         file_path = write_markdown_output(
             scope=args.scope,
-            content=args.content,
+            content=content,
             output_dir=args.output_dir,
         )
     except WriteError as e:
@@ -134,16 +139,43 @@ def main() -> int:
     return EXIT_SUCCESS
 
 
+def _resolve_content(args: argparse.Namespace) -> str:
+    """Resolve content from either --content or --file argument.
+
+    Args:
+        args (argparse.Namespace): Parsed CLI arguments.
+
+    Returns:
+        str: The resolved content string.
+
+    Raises:
+        WriteError: If the content file cannot be read.
+    """
+    if args.content is not None:
+        return args.content
+    file_path = Path(args.file)
+    if not file_path.is_file():
+        raise WriteError(f"Content file not found: {args.file}")
+    try:
+        return file_path.read_text(encoding="utf-8")
+    except OSError as e:
+        raise WriteError(f"Cannot read content file: {e}") from e
+
+
 def _build_argument_parser() -> argparse.ArgumentParser:
-    """Build the CLI argument parser."""
+    """Build the CLI argument parser.
+
+    Returns:
+        argparse.ArgumentParser: Configured argument parser with usage and help text.
+    """
     parser = argparse.ArgumentParser(
         prog="write_markdown_output",
         description="Write content to a timestamped markdown file.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s -s "sql-plan" -c "# Plan" -o ".claude/agent-outputs/plans"
-  %(prog)s -s "review" -c "# Review" -o ".claude/agent-outputs/reviews"
+  %(prog)s -s "sql-plan" -f /tmp/output-content.md -o ".claude/agent-outputs/plans"
+  %(prog)s -s "review" -c "# Simple review" -o ".claude/agent-outputs/reviews"
 
 Exit codes:
   0  File written successfully
@@ -159,13 +191,21 @@ Exit codes:
         metavar="SCOPE",
         help="Scope/title for the filename (e.g., 'sql-validation-plan')",
     )
-    parser.add_argument(
+
+    content_group = parser.add_mutually_exclusive_group(required=True)
+    content_group.add_argument(
+        "-f",
+        "--file",
+        metavar="FILE",
+        help="Path to a file containing the markdown content (recommended)",
+    )
+    content_group.add_argument(
         "-c",
         "--content",
-        required=True,
         metavar="CONTENT",
-        help="Markdown content to write",
+        help="Markdown content string (for simple content without shell-special characters)",
     )
+
     parser.add_argument(
         "-o",
         "--output-dir",
