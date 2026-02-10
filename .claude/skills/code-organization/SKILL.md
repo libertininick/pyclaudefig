@@ -25,8 +25,15 @@ Apply these organization patterns when writing Python code in this repository.
 
 ## Module Structure
 
-**Pattern**: Public interface at top, private helpers below. Within each section,
-group related classes and functions together and order them by logical flow. 
+**Pattern**: ALL public functions and classes MUST be defined before ANY private
+(`_`-prefixed) functions and classes. This boundary is strict — private helpers
+must never appear above public definitions, even if a private function is only
+called by the public function directly below it. Within each section (public or
+private), group related items together and order them by logical flow.
+
+**Verification**: Scan the module top-to-bottom. If any `_`-prefixed function or
+class definition appears before a non-`_`-prefixed function or class definition,
+that is a violation and must be reordered.
 
 ```python
 # src/package/module/file.py
@@ -34,7 +41,7 @@ group related classes and functions together and order them by logical flow.
 # Imports (organized by section)
 ...
 
-# Public interface
+# Public interface (ALL public definitions first)
 class PublicClass:
     """Public API class."""
     ...
@@ -43,9 +50,31 @@ def public_function() -> ReturnType:
     """Public API function."""
     ...
 
-# Private helpers
+# Private helpers (ALL private definitions after)
 def _private_helper() -> ReturnType:
     """Internal implementation detail."""
+    ...
+```
+
+```python
+# INCORRECT - private function defined before public function
+def _validate_inputs(data: Data) -> None:
+    """Validate inputs."""
+    ...
+
+def process_data(data: Data) -> Result:
+    """Process data."""
+    _validate_inputs(data)
+    ...
+
+# CORRECT - public function first, private helper after
+def process_data(data: Data) -> Result:
+    """Process data."""
+    _validate_inputs(data)
+    ...
+
+def _validate_inputs(data: Data) -> None:
+    """Validate inputs."""
     ...
 ```
 

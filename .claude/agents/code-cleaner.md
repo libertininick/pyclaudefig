@@ -51,7 +51,7 @@ The bundle contains: code-organization, naming-conventions, function-design, cla
 ### 1. Code Organization
 Apply `code-organization` skill:
 - Verify import order: stdlib -> third-party -> local
-- Check module structure: public interface at top, private helpers below
+- **Check public-before-private ordering**: Scan all top-level `def` and `class` statements top-to-bottom. If ANY `_`-prefixed definition appears before a non-`_`-prefixed definition, reorder so that ALL public definitions come first, then ALL private definitions. This is a strict rule with no exceptions.
 - Identify and flag circular import risks
 - Ensure single responsibility per function/class
 
