@@ -302,7 +302,7 @@ Use the `/add-framework` command to register a new approved library:
 ```
 
 This will:
-1. Resolve the Context7 library ID (for documentation lookup)
+1. Resolve the doc ID (for documentation lookup)
 2. Find the official documentation URL
 3. Confirm the details with you
 4. Update `skills/frameworks/SKILL.md` with the new entry

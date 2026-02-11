@@ -49,6 +49,7 @@ Before writing any plan:
 - Glob to find files in relevant modules
 - Read 2-3 related existing files
 - Check bundle's `frameworks` section for approved libraries
+- Use `fetch-docs` skill to look up framework APIs when planning implementation details
 - Read existing tests to understand test patterns
 
 ### 5. Write the Plan
