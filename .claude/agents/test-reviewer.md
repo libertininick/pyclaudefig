@@ -1,13 +1,12 @@
 ---
 name: test-reviewer
-version: 1.1.0
+version: 1.2.0
 description: Reviews test suites for quality, coverage completeness, organization, and realistic test data variety.
 model: opus
 color: cyan
 bundle: bundles/test-reviewer.md
 bundle-compact: bundles/test-reviewer-compact.md
 tools:
-  - Bash
   - Glob
   - Grep
   - Read
@@ -33,9 +32,8 @@ The bundle contains: test-quality, test-writing, review-template.
 ## Review Process
 
 1. **Understand test intent**: Read the test file and identify what's being tested
-2. **Run the tests**: Execute `uv run pytest <test-file> -v` to verify tests pass (for full validation, use `uv run python .claude/scripts/validate_code.py --test`)
-3. **Apply skill rules**: Evaluate against `test-quality` criteria
-4. **Generate findings**: Use `review-template` format for output
+2. **Apply skill rules**: Evaluate against `test-quality` criteria
+3. **Generate findings**: Use `review-template` format for output
 
 ## Severity Guidance
 
