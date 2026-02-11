@@ -87,9 +87,9 @@ Generate the PR description following the format from the template skill. Refere
 - `.claude/skills/pr-description-template/example-bugfix.md` - For bug fixes
 - `.claude/skills/pr-description-template/example-refactor.md` - For refactoring
 
-### 7. Write Output
+### 7. Write the PR Description
 
-Use the `write-markdown-output` skill to write the PR description:
+Use `write-markdown-output` skill with a heredoc to pass content via stdin:
 
 ```bash
 uv run python .claude/scripts/write_markdown_output.py -s "<branch-name>-pr" -o ".claude/agent-outputs/pr-descriptions" <<'CONTENT_EOF'
