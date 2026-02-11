@@ -52,14 +52,11 @@ Before writing any plan:
 - Read existing tests to understand test patterns
 
 ### 5. Write the Plan
-Use `write-markdown-output` skill:
+Use `write-markdown-output` skill with a heredoc to pass content via stdin:
 ```bash
-# Step 1: Use Write tool to save plan content to /tmp/output-content.md
-# Step 2: Invoke script with -f
-uv run python .claude/scripts/write_markdown_output.py \
-    -s "<scope>-plan" \
-    -f /tmp/output-content.md \
-    -o ".claude/agent-outputs/plans"
+uv run python .claude/scripts/write_markdown_output.py -s "<scope>-plan" -o ".claude/agent-outputs/plans" <<'CONTENT_EOF'
+<plan content here>
+CONTENT_EOF
 ```
 
 ### 6. Present to User

@@ -92,12 +92,9 @@ Generate the PR description following the format from the template skill. Refere
 Use the `write-markdown-output` skill to write the PR description:
 
 ```bash
-# Step 1: Use Write tool to save PR description content to /tmp/output-content.md
-# Step 2: Invoke script with -f
-uv run python .claude/scripts/write_markdown_output.py \
-    -s "<branch-name>-pr" \
-    -f /tmp/output-content.md \
-    -o ".claude/agent-outputs/pr-descriptions"
+uv run python .claude/scripts/write_markdown_output.py -s "<branch-name>-pr" -o ".claude/agent-outputs/pr-descriptions" <<'CONTENT_EOF'
+<PR description content here>
+CONTENT_EOF
 ```
 
 ## Output
