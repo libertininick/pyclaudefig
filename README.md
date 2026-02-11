@@ -17,19 +17,19 @@ This configuration assumes you already have:
    - All tools are runnable via `uv run python .claude/scripts/validate_code.py`
 4. **[Context7](https://context7.com/sign-up) free account** for fetching up-to-date framework documentation via MCP
 
-### Setup
+### Initial setup
 
 1. **Download [`.claude/`](.claude/)** into your project root
 
-    ```sh
-    cd /path/to/your/project
+   ```sh
+   cd /path/to/your/project
 
-    # Download pyclaudefig
-    curl -L https://api.github.com/repos/libertininick/pyclaudefig/tarball/HEAD | tar -xz
+   # Download pyclaudefig
+   curl -L https://api.github.com/repos/libertininick/pyclaudefig/tarball/HEAD | tar -xz
 
-    # Move .claude directory to root of project and remove remaining items from download
-    mv libertininick-pyclaudefig-*/.claude ./ && rm -rf libertininick-pyclaudefig-*
-    ```
+   # Move .claude directory to root of project and remove remaining items from download
+   mv libertininick-pyclaudefig-*/.claude ./ && rm -rf libertininick-pyclaudefig-*
+   ```
 
 2. **Connect the Context7 MCP server** to Claude Code
 
@@ -61,6 +61,30 @@ This configuration assumes you already have:
 
    Re-run `/sync` any time you make changes to `.claude/`, add a skill/command/agent, or update a setting.
 
+### Sync local config
+
+After initial setup, you may want to sync your local config with changed pushed to `pyclaudefig`. Here's an approach using `rsync`:
+
+   ```sh
+   cd /path/to/your/project
+
+   # Download pyclaudefig
+   curl -L https://api.github.com/repos/libertininick/pyclaudefig/tarball/HEAD | tar -xz
+
+   # Sync changes
+   # NOTE: use --dry-run to look before you leap ;)
+   rsync -av \
+   --delete \
+   --exclude='agent-outputs' \
+   --exclude='bundles' \
+   --exclude='**/__pycache__' \
+   libertininick-pyclaudefig-*/.claude/ \
+   claude/ \
+   --dry-run
+
+   # Remove remaining items from download
+   rm -rf libertininick-pyclaudefig-*
+   ```
 ### Core Workflow
 
 The core loop is: **plan → implement → review → commit → update plan**, one phase at a time.
