@@ -29,10 +29,66 @@ Guidance for Claude Code when working in this repository.
    - Naming anything → `naming-conventions/SKILL.md`
    - Refactoring complex code → `complexity-refactoring/SKILL.md`
 3. **Fetch docs when uncertain** - Use Context7 MCP (see `frameworks` skill for IDs)
-4. **Use specialized agents** - See Agents section
+4. **Mandatory task delegation** - See Task Delegation section below; NEVER skip
 5. **Never hallucinate** - Ask if uncertain about paths, modules, or APIs
 6. **Never delete code** unless explicitly instructed
 7. **Never commit** unless explicitly instructed
+
+---
+
+## Task Delegation (MANDATORY)
+
+> **REQUIREMENT**: You MUST delegate tasks to specialized agents whenever a matching agent exists.
+> If no agent matches, you MUST load the appropriate compact context bundles before proceeding.
+> NEVER attempt a task directly without either delegating or loading bundles first.
+
+### Delegation Routing Table
+
+Evaluate every user request against this table. Use the **first matching row**.
+
+| User Request | Delegate To | Notes |
+|-------------|-------------|-------|
+| Write, implement, or modify Python code | `python-code-writer` | Includes new functions, classes, modules, bug fixes, feature additions |
+| Write or update tests | `python-test-writer` | Includes new test files, adding test cases, fixing failing tests |
+| Review code (general) | `code-style-reviewer` + `code-substance-reviewer` | Launch both in parallel; use `/review` command when available |
+| Review tests | `test-reviewer` | May combine with code reviewers if reviewing both source and tests |
+| Clean, refactor, or organize code | `code-cleaner` | Includes import cleanup, complexity reduction, docstring fixes |
+| Create an implementation plan | `planner` | For new features, refactors, or architectural changes |
+| Improve Claude Code configuration | `config-learner` | For feedback, skill updates, CLAUDE.md changes |
+
+### When No Agent Matches
+
+If the request does not clearly map to an agent above, the main agent MUST:
+
+1. **Identify relevant skills** from the Skills section below
+2. **Load compact context bundles** for those skills by reading the corresponding files from `.claude/bundles/`:
+   - Python coding tasks → `bundles/python-code-writer-compact.md`
+   - Code quality/style questions → `bundles/code-style-reviewer-compact.md`
+   - Design/architecture questions → `bundles/code-substance-reviewer-compact.md`
+   - Test-related questions → `bundles/test-reviewer-compact.md` or `bundles/python-test-writer-compact.md`
+   - Planning/scoping questions → `bundles/planner-compact.md`
+   - Configuration/skills questions → `bundles/config-learner-compact.md`
+3. **Then proceed** with the task using the loaded context
+
+### Examples
+
+```
+# CORRECT - delegate to subagent
+User: "Add a retry mechanism to the API client"
+Action: Delegate to python-code-writer
+
+# CORRECT - delegate to multiple subagents
+User: "Review this PR"
+Action: Delegate to code-style-reviewer + code-substance-reviewer + test-reviewer
+
+# CORRECT - no agent match, load bundles first
+User: "What naming convention should I use for async functions?"
+Action: Load bundles/code-style-reviewer-compact.md, then answer
+
+# INCORRECT - doing work directly without delegating or loading bundles
+User: "Write a function to parse CSV files"
+Action: Writing code directly without delegating to python-code-writer
+```
 
 ---
 
