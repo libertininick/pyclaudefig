@@ -19,7 +19,6 @@
       "Bash(mkdir -p */.claude/*)",
       "Bash(uv run python .claude/scripts/*)",
       "Bash(uv run python */.claude/scripts/*)",
-      "Bash(cat > /tmp/output-content.md*)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
       "Read(*.claude/agent-outputs/**/*.md)",

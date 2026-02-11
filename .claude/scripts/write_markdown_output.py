@@ -2,21 +2,20 @@
 """Write content to a timestamped markdown file.
 
 This module provides a simple utility for agents to write markdown output
-files with UTC timestamps in the filename, following the repository's
-naming conventions.
+files with UTC timestamps in the filename, following the configuration's
+naming conventions. Content is ALWAYS read from stdin.
 
 Example usage:
-    Write content from a file (recommended)
+    Write content via stdin heredoc:
 
     ```sh
-    python write_markdown_output.py -s "sql-validation-plan" -f /tmp/output-content.md -o ".claude/agent-outputs/plans"
+    python write_markdown_output.py -s "sql-validation-plan" -o ".claude/agent-outputs/plans" <<'CONTENT_EOF'
+    # Plan content here
+    CONTENT_EOF
     ```
 
-    Write content from a CLI argument (simple content only)
-
-    ```sh
-    python write_markdown_output.py -s "parser-review" -c "# Review" -o ".claude/agent-outputs/reviews"
-    ```
+    The single-quoted heredoc delimiter (<<'CONTENT_EOF') prevents all shell
+    interpolation, so backticks, $variables, and quotes pass through safely.
 
 Exit codes:
     0: File written successfully
@@ -124,8 +123,14 @@ def main() -> int:
     parser = _build_argument_parser()
     args = parser.parse_args()
 
+    # Read content from stdin
+    content = sys.stdin.read()
+    if not content.strip():
+        print("[ERROR] No content received from stdin", file=sys.stderr)
+        return EXIT_WRITE_ERROR
+
+    # Write content to file
     try:
-        content = _resolve_content(args)
         file_path = write_markdown_output(
             scope=args.scope,
             content=content,
@@ -139,29 +144,6 @@ def main() -> int:
     return EXIT_SUCCESS
 
 
-def _resolve_content(args: argparse.Namespace) -> str:
-    """Resolve content from either --content or --file argument.
-
-    Args:
-        args (argparse.Namespace): Parsed CLI arguments.
-
-    Returns:
-        str: The resolved content string.
-
-    Raises:
-        WriteError: If the content file cannot be read.
-    """
-    if args.content is not None:
-        return args.content
-    file_path = Path(args.file)
-    if not file_path.is_file():
-        raise WriteError(f"Content file not found: {args.file}")
-    try:
-        return file_path.read_text(encoding="utf-8")
-    except OSError as e:
-        raise WriteError(f"Cannot read content file: {e}") from e
-
-
 def _build_argument_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser.
 
@@ -170,12 +152,13 @@ def _build_argument_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="write_markdown_output",
-        description="Write content to a timestamped markdown file.",
+        description="Write content to a timestamped markdown file. Reads content from stdin.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s -s "sql-plan" -f /tmp/output-content.md -o ".claude/agent-outputs/plans"
-  %(prog)s -s "review" -c "# Simple review" -o ".claude/agent-outputs/reviews"
+  %(prog)s -s "plan" -o ".claude/agent-outputs/plans" <<'CONTENT_EOF'
+  # Plan content
+  CONTENT_EOF
 
 Exit codes:
   0  File written successfully
@@ -190,20 +173,6 @@ Exit codes:
         required=True,
         metavar="SCOPE",
         help="Scope/title for the filename (e.g., 'sql-validation-plan')",
-    )
-
-    content_group = parser.add_mutually_exclusive_group(required=True)
-    content_group.add_argument(
-        "-f",
-        "--file",
-        metavar="FILE",
-        help="Path to a file containing the markdown content (recommended)",
-    )
-    content_group.add_argument(
-        "-c",
-        "--content",
-        metavar="CONTENT",
-        help="Markdown content string (for simple content without shell-special characters)",
     )
 
     parser.add_argument(

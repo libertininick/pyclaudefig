@@ -9,6 +9,7 @@ timestamp generation, file writing, CLI argument parsing, and error handling.
 from __future__ import annotations
 
 import argparse
+import io
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -21,7 +22,6 @@ from write_markdown_output import (
     EXIT_WRITE_ERROR,
     WriteError,
     _build_argument_parser,
-    _resolve_content,
     generate_timestamp,
     main,
     write_markdown_output,
@@ -40,14 +40,6 @@ def sample_scope() -> str:
     return "test-plan"
 
 
-@pytest.fixture
-def content_file(tmp_path: Path, sample_content: str) -> Path:
-    """Create a temporary content file for testing."""
-    filepath = tmp_path / "content.md"
-    filepath.write_text(sample_content, encoding="utf-8")
-    return filepath
-
-
 class TestGenerateTimestamp:
     """Tests for generate_timestamp function."""
 
@@ -63,6 +55,7 @@ class TestGenerateTimestamp:
 
         # Assert
         assert timestamp == "2026-02-10T143045Z"
+
 
 class TestWriteMarkdownOutput:
     """Tests for write_markdown_output function."""
@@ -257,91 +250,6 @@ class TestWriteMarkdownOutput:
         assert result_path.is_absolute()
 
 
-class TestResolveContent:
-    """Tests for _resolve_content function."""
-
-    def test_resolve_content_from_content_arg(self, sample_content: str) -> None:
-        """Should return content from --content argument when provided."""
-        # Arrange
-        args = argparse.Namespace(content=sample_content, file=None)
-
-        # Act
-        result = _resolve_content(args)
-
-        # Assert
-        assert result == sample_content
-
-    def test_resolve_content_from_file_arg(
-        self,
-        content_file: Path,
-        sample_content: str,
-    ) -> None:
-        """Should read content from --file argument when provided."""
-        # Arrange
-        args = argparse.Namespace(content=None, file=str(content_file))
-
-        # Act
-        result = _resolve_content(args)
-
-        # Assert
-        assert result == sample_content
-
-    def test_resolve_content_prefers_content_over_file(
-        self,
-        content_file: Path,
-    ) -> None:
-        """Should prefer --content over --file when content is not None."""
-        # Arrange
-        content_arg = "# Direct content"
-        args = argparse.Namespace(content=content_arg, file=str(content_file))
-
-        # Act
-        result = _resolve_content(args)
-
-        # Assert
-        assert result == content_arg
-
-    def test_resolve_content_raises_when_file_not_found(self) -> None:
-        """Should raise WriteError when file doesn't exist."""
-        # Arrange
-        args = argparse.Namespace(content=None, file="/nonexistent/file.md")
-
-        # Act / Assert
-        with pytest.raises(WriteError, match="Content file not found"):
-            _resolve_content(args)
-
-    def test_resolve_content_raises_when_file_not_readable(
-        self,
-        tmp_path: Path,
-    ) -> None:
-        """Should raise WriteError when file can't be read."""
-        # Arrange
-        filepath = tmp_path / "unreadable.md"
-        filepath.write_text("content", encoding="utf-8")
-        args = argparse.Namespace(content=None, file=str(filepath))
-
-        # Act / Assert
-        with (
-            patch("pathlib.Path.read_text", side_effect=OSError("Permission denied")),
-            pytest.raises(WriteError, match="Cannot read content file"),
-        ):
-            _resolve_content(args)
-
-    def test_resolve_content_raises_when_path_is_directory(
-        self,
-        tmp_path: Path,
-    ) -> None:
-        """Should raise WriteError when file path is actually a directory."""
-        # Arrange
-        directory = tmp_path / "subdir"
-        directory.mkdir()
-        args = argparse.Namespace(content=None, file=str(directory))
-
-        # Act / Assert
-        with pytest.raises(WriteError, match="Content file not found"):
-            _resolve_content(args)
-
-
 class TestBuildArgumentParser:
     """Tests for _build_argument_parser function."""
 
@@ -357,14 +265,7 @@ class TestBuildArgumentParser:
         """Parser should accept valid argument combinations."""
         # Arrange
         parser = _build_argument_parser()
-        valid_args = [
-            "-s",
-            "test-scope",
-            "-c",
-            "# Content",
-            "-o",
-            "/tmp/outputs",
-        ]
+        valid_args = ["-s", "test-scope", "-o", "/tmp/outputs"]
 
         # Act
         args = parser.parse_args(valid_args)
@@ -373,122 +274,27 @@ class TestBuildArgumentParser:
         with check:
             assert args.scope == "test-scope"
         with check:
-            assert args.content == "# Content"
-        with check:
             assert args.output_dir == "/tmp/outputs"
 
     def test_build_argument_parser_requires_scope(self) -> None:
         """Parser should require --scope argument."""
         # Arrange
         parser = _build_argument_parser()
-        args_without_scope = ["-c", "# Content", "-o", "/tmp/outputs"]
+        args_without_scope = ["-o", "/tmp/outputs"]
 
         # Act / Assert
         with pytest.raises(SystemExit):
             parser.parse_args(args_without_scope)
 
-    def test_build_argument_parser_requires_content_or_file(self) -> None:
-        """Parser should require either --content or --file."""
-        # Arrange
-        parser = _build_argument_parser()
-        args_without_content = ["-s", "scope", "-o", "/tmp/outputs"]
-
-        # Act / Assert
-        with pytest.raises(SystemExit):
-            parser.parse_args(args_without_content)
-
-    def test_build_argument_parser_rejects_both_content_and_file(self) -> None:
-        """Parser should reject both --content and --file together."""
-        # Arrange
-        parser = _build_argument_parser()
-        args_with_both = [
-            "-s",
-            "scope",
-            "-c",
-            "Content",
-            "-f",
-            "/tmp/file.md",
-            "-o",
-            "/tmp/outputs",
-        ]
-
-        # Act / Assert
-        with pytest.raises(SystemExit):
-            parser.parse_args(args_with_both)
-
     def test_build_argument_parser_requires_output_dir(self) -> None:
         """Parser should require --output-dir argument."""
         # Arrange
         parser = _build_argument_parser()
-        args_without_output = ["-s", "scope", "-c", "Content"]
+        args_without_output = ["-s", "scope"]
 
         # Act / Assert
         with pytest.raises(SystemExit):
             parser.parse_args(args_without_output)
-
-    def test_build_argument_parser_accepts_file_argument(self) -> None:
-        """Parser should accept --file argument."""
-        # Arrange
-        parser = _build_argument_parser()
-        valid_args = [
-            "-s",
-            "test-scope",
-            "-f",
-            "/tmp/content.md",
-            "-o",
-            "/tmp/outputs",
-        ]
-
-        # Act
-        args = parser.parse_args(valid_args)
-
-        # Assert
-        with check:
-            assert args.file == "/tmp/content.md"
-        with check:
-            assert args.content is None
-
-    def test_build_argument_parser_accepts_short_flags(self) -> None:
-        """Parser should accept short flags (-s, -c, -o)."""
-        # Arrange
-        parser = _build_argument_parser()
-        args_with_short_flags = ["-s", "scope", "-c", "Content", "-o", "/tmp/out"]
-
-        # Act
-        args = parser.parse_args(args_with_short_flags)
-
-        # Assert
-        with check:
-            assert args.scope == "scope"
-        with check:
-            assert args.content == "Content"
-        with check:
-            assert args.output_dir == "/tmp/out"
-
-    def test_build_argument_parser_accepts_long_flags(self) -> None:
-        """Parser should accept long flags (--scope, --content, --output-dir)."""
-        # Arrange
-        parser = _build_argument_parser()
-        args_with_long_flags = [
-            "--scope",
-            "scope",
-            "--content",
-            "Content",
-            "--output-dir",
-            "/tmp/out",
-        ]
-
-        # Act
-        args = parser.parse_args(args_with_long_flags)
-
-        # Assert
-        with check:
-            assert args.scope == "scope"
-        with check:
-            assert args.content == "Content"
-        with check:
-            assert args.output_dir == "/tmp/out"
-
 
 class TestMain:
     """Tests for main CLI entry point."""
@@ -496,6 +302,7 @@ class TestMain:
     def test_main_success_returns_exit_success(
         self,
         tmp_path: Path,
+        sample_content: str,
     ) -> None:
         """Main should return EXIT_SUCCESS when file is written successfully."""
         # Arrange
@@ -504,14 +311,15 @@ class TestMain:
             "script.py",
             "-s",
             "test-scope",
-            "-c",
-            "# Content",
             "-o",
             str(output_dir),
         ]
 
         # Act
-        with patch("sys.argv", test_args):
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO(sample_content)),
+        ):
             exit_code = main()
 
         # Assert
@@ -519,6 +327,7 @@ class TestMain:
 
     def test_main_write_error_returns_exit_write_error(
         self,
+        sample_content: str,
     ) -> None:
         """Main should return EXIT_WRITE_ERROR when write_markdown_output raises."""
         # Arrange
@@ -526,14 +335,15 @@ class TestMain:
             "script.py",
             "-s",
             "scope",
-            "-c",
-            "Content",
             "-o",
             "/invalid_root/dir",
         ]
 
         # Act
-        with patch("sys.argv", test_args):
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO(sample_content)),
+        ):
             exit_code = main()
 
         # Assert
@@ -559,6 +369,7 @@ class TestMain:
     def test_main_prints_success_message(
         self,
         tmp_path: Path,
+        sample_content: str,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """Main should print success message with file path."""
@@ -568,14 +379,15 @@ class TestMain:
             "script.py",
             "-s",
             "scope",
-            "-c",
-            "Content",
             "-o",
             str(output_dir),
         ]
 
         # Act
-        with patch("sys.argv", test_args):
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO(sample_content)),
+        ):
             main()
 
         # Assert
@@ -587,6 +399,7 @@ class TestMain:
 
     def test_main_prints_error_message(
         self,
+        sample_content: str,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """Main should print error message to stderr on failure."""
@@ -595,14 +408,15 @@ class TestMain:
             "script.py",
             "-s",
             "scope",
-            "-c",
-            "Content",
             "-o",
             "/invalid_root/dir",
         ]
 
         # Act
-        with patch("sys.argv", test_args):
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO(sample_content)),
+        ):
             main()
 
         # Assert
@@ -612,51 +426,97 @@ class TestMain:
         with check:
             assert "Cannot create output directory" in captured.err
 
-    def test_main_with_file_argument(
+    def test_main_writes_correct_content(
         self,
         tmp_path: Path,
-        content_file: Path,
+        sample_content: str,
     ) -> None:
-        """Main should work correctly with --file argument."""
+        """Main should write the piped stdin content to the output file."""
         # Arrange
         output_dir = tmp_path / "outputs"
         test_args = [
             "script.py",
             "-s",
             "scope",
-            "-f",
-            str(content_file),
             "-o",
             str(output_dir),
         ]
 
         # Act
-        with patch("sys.argv", test_args):
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO(sample_content)),
+        ):
+            main()
+
+        # Assert
+        written_files = list(output_dir.glob("*.md"))
+        assert len(written_files) == 1
+        assert written_files[0].read_text(encoding="utf-8") == sample_content
+
+    def test_main_special_characters_writes_correct_content(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Main should preserve special characters from stdin end-to-end."""
+        # Arrange
+        content = (
+            "# Review with `backticks`\n"
+            "\n"
+            "Here's a $variable and ${another_var}.\n"
+            "She said \"hello\" and 'goodbye'.\n"
+            "Backslash: \\ pipe: | ampersand: & semicolon: ;\n"
+            "Parens: () brackets: [] braces: {}\n"
+            "```python\n"
+            "x = f'{value}'\n"
+            "```\n"
+        )
+        output_dir = tmp_path / "outputs"
+        test_args = [
+            "script.py",
+            "-s",
+            "special-chars-review",
+            "-o",
+            str(output_dir),
+        ]
+
+        # Act
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO(content)),
+        ):
             exit_code = main()
 
         # Assert
-        assert exit_code == EXIT_SUCCESS
+        written_files = list(output_dir.glob("*.md"))
+        with check:
+            assert exit_code == EXIT_SUCCESS
+        with check:
+            assert len(written_files) == 1
+        with check:
+            assert written_files[0].read_text(encoding="utf-8") == content
 
-    def test_main_with_nonexistent_file(
+    def test_main_empty_stdin_returns_error(
         self,
         tmp_path: Path,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        """Main should handle nonexistent file with error."""
+        """Main should return EXIT_WRITE_ERROR when stdin is empty."""
         # Arrange
         output_dir = tmp_path / "outputs"
         test_args = [
             "script.py",
             "-s",
             "scope",
-            "-f",
-            "/nonexistent/file.md",
             "-o",
             str(output_dir),
         ]
 
         # Act
-        with patch("sys.argv", test_args):
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO("")),
+        ):
             exit_code = main()
 
         # Assert
@@ -664,7 +524,37 @@ class TestMain:
         with check:
             assert exit_code == EXIT_WRITE_ERROR
         with check:
-            assert "Content file not found" in captured.err
+            assert "No content received from stdin" in captured.err
+
+    def test_main_whitespace_only_stdin_returns_error(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Main should return EXIT_WRITE_ERROR when stdin is only whitespace."""
+        # Arrange
+        output_dir = tmp_path / "outputs"
+        test_args = [
+            "script.py",
+            "-s",
+            "scope",
+            "-o",
+            str(output_dir),
+        ]
+
+        # Act
+        with (
+            patch("sys.argv", test_args),
+            patch("sys.stdin", new=io.StringIO("   \n\n  ")),
+        ):
+            exit_code = main()
+
+        # Assert
+        captured = capsys.readouterr()
+        with check:
+            assert exit_code == EXIT_WRITE_ERROR
+        with check:
+            assert "No content received from stdin" in captured.err
 
 
 class TestExitCodes:

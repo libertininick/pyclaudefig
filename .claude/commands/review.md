@@ -63,12 +63,9 @@ After all reviews complete:
 5. **Use `write-markdown-output` skill** to write the unified report:
 
 ```bash
-# Step 1: Use Write tool to save aggregated review content to /tmp/output-content.md
-# Step 2: Invoke script with -f
-uv run python .claude/scripts/write_markdown_output.py \
-    -s "<scope>-review" \
-    -f /tmp/output-content.md \
-    -o ".claude/agent-outputs/reviews"
+uv run python .claude/scripts/write_markdown_output.py -s "<scope>-review" -o ".claude/agent-outputs/reviews" <<'CONTENT_EOF'
+<aggregated review content here>
+CONTENT_EOF
 ```
 
 **IMPORTANT**: Launch all applicable reviewers in parallel (multiple Task calls in a single message). They have disjoint scopes.
