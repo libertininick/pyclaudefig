@@ -325,8 +325,7 @@ Run `/add-framework --help` for more examples.
    {
      "name": "your-skill",
      "category": "conventions",
-     "description": "What this skill provides",
-     "user_invocable": false
+     "description": "What this skill provides"
    }
    ```
 
@@ -354,7 +353,6 @@ Run `/add-framework --help` for more examples.
    ```yaml
    ---
    name: your-agent
-   version: 1.0.0
    description: What this agent does
    model: sonnet  # or opus
    bundle: bundles/your-agent.md
@@ -372,7 +370,6 @@ Run `/add-framework --help` for more examples.
    {
      "name": "your-agent",
      "description": "What this agent does",
-     "model": "sonnet",
      "depends_on_skills": ["skill1", "skill2"]
    }
    ```
@@ -388,7 +385,6 @@ Run `/add-framework --help` for more examples.
    ```yaml
    ---
    name: your-command
-   version: 1.0.0
    description: What this command does
    depends_on_agents:
      - agent-it-uses
