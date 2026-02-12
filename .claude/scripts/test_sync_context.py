@@ -10,9 +10,10 @@ section generation, bundle regeneration, and the main entry point.
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import sync_context
@@ -68,113 +69,6 @@ def _write_md_file(
     directory.mkdir(parents=True, exist_ok=True)
     content = f"---\n{frontmatter}\n---\n{body}"
     (directory / filename).write_text(content)
-
-
-# ============================================================================
-# Test: _parse_value
-# ============================================================================
-
-
-class TestParseValue:
-    """Tests for _parse_value private helper that converts frontmatter value strings."""
-
-    @pytest.mark.parametrize(
-        ("input_value", "expected"),
-        [
-            ("true", True),
-            ("True", True),
-            ("TRUE", True),
-            ("false", False),
-            ("False", False),
-            ("FALSE", False),
-        ],
-    )
-    def test_parse_value_boolean_strings_returns_bool(
-        self, *, input_value: str, expected: bool
-    ) -> None:
-        """Boolean strings should be converted to Python bool regardless of case.
-
-        Args:
-            input_value (str): Input string like "true" or "False".
-            expected (bool): Expected boolean result.
-        """
-        # Act
-        parsed = sync_context._parse_value(input_value)
-
-        # Assert
-        assert parsed is expected
-
-    def test_parse_value_inline_list_returns_list(self) -> None:
-        """Bracket-delimited list should be parsed into a Python list of strings."""
-        # Act
-        parsed = sync_context._parse_value("[alpha, beta, gamma]")
-
-        # Assert
-        with check:
-            assert isinstance(parsed, list)
-        with check:
-            assert parsed == ["alpha", "beta", "gamma"]
-
-    def test_parse_value_inline_list_with_quotes_strips_quotes(self) -> None:
-        """Quoted items in inline list should have quotes stripped."""
-        # Act
-        parsed = sync_context._parse_value("[\" alpha \", 'beta']")
-
-        # Assert
-        assert parsed == [" alpha ", "beta"]
-
-    def test_parse_value_empty_inline_list_returns_empty_list(self) -> None:
-        """Empty bracket list should return an empty list."""
-        # Act
-        parsed = sync_context._parse_value("[]")
-
-        # Assert
-        assert parsed == []
-
-    def test_parse_value_regular_string_returns_string(self) -> None:
-        """Non-boolean, non-list values should be returned as-is."""
-        # Act
-        parsed = sync_context._parse_value("some description text")
-
-        # Assert
-        with check:
-            assert isinstance(parsed, str)
-        with check:
-            assert parsed == "some description text"
-
-    def test_parse_value_quoted_string_preserves_quotes(self) -> None:
-        """Quoted standalone string should NOT have quotes stripped by _parse_value.
-
-        Quote stripping happens in parse_frontmatter at the key-value level,
-        not in _parse_value. This documents that _parse_value is pass-through for quotes.
-        """
-        # Act
-        parsed = sync_context._parse_value('"quoted"')
-
-        # Assert
-        assert parsed == '"quoted"'
-
-    @pytest.mark.parametrize(
-        ("input_value", "expected"),
-        [
-            ("", ""),
-            (" true ", " true "),
-        ],
-    )
-    def test_parse_value_non_boolean_lookalikes_returns_string(
-        self, *, input_value: str, expected: str
-    ) -> None:
-        """Empty string and whitespace-padded booleans should pass through as strings.
-
-        Args:
-            input_value (str): Input that looks like it could be boolean.
-            expected (str): Expected string result (not converted to bool).
-        """
-        # Act
-        parsed = sync_context._parse_value(input_value)
-
-        # Assert
-        assert parsed == expected
 
 
 # ============================================================================
@@ -351,6 +245,35 @@ class TestParseFrontmatter:
         # Assert - documents current behavior: trailing apostrophe is stripped
         assert frontmatter["description"] == "It's a test"
 
+    def test_parse_frontmatter_boolean_case_variants_returns_python_bools(self) -> None:
+        """Boolean values in various cases should all be converted to Python booleans."""
+        # Arrange
+        content = "---\na: True\nb: TRUE\nc: False\nd: FALSE\n---\n"
+
+        # Act
+        frontmatter, _ = parse_frontmatter(content)
+
+        # Assert
+        with check:
+            assert frontmatter["a"] is True
+        with check:
+            assert frontmatter["b"] is True
+        with check:
+            assert frontmatter["c"] is False
+        with check:
+            assert frontmatter["d"] is False
+
+    def test_parse_frontmatter_empty_inline_list_returns_empty_list(self) -> None:
+        """Empty inline list in frontmatter should return an empty Python list."""
+        # Arrange
+        content = "---\nitems: []\n---\n"
+
+        # Act
+        frontmatter, _ = parse_frontmatter(content)
+
+        # Assert
+        assert frontmatter["items"] == []
+
 
 # ============================================================================
 # Test: scan_skills
@@ -359,18 +282,6 @@ class TestParseFrontmatter:
 
 class TestScanSkills:
     """Tests for scan_skills that discovers skill metadata from the filesystem."""
-
-    @pytest.fixture(autouse=True)
-    def _patch_skills_dir(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Patch SKILLS_DIR to tmp_path for all tests in this class.
-
-        Args:
-            tmp_path (Path): Pytest temporary directory fixture.
-            monkeypatch (pytest.MonkeyPatch): Monkeypatch fixture.
-        """
-        monkeypatch.setattr(sync_context, "SKILLS_DIR", tmp_path)
 
     def test_scan_skills_valid_directory_returns_skill_info(
         self, tmp_path: Path
@@ -387,7 +298,7 @@ class TestScanSkills:
         )
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert
         with check:
@@ -408,7 +319,7 @@ class TestScanSkills:
         _write_skill(tmp_path / "beta", "name: beta\ndescription: Beta skill")
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert
         with check:
@@ -418,29 +329,33 @@ class TestScanSkills:
         with check:
             assert "beta" in skills
 
-    def test_scan_skills_empty_directory_returns_empty_dict(self) -> None:
-        """Empty skills directory should return empty dict."""
+    def test_scan_skills_empty_directory_returns_empty_dict(
+        self, tmp_path: Path
+    ) -> None:
+        """Empty skills directory should return empty dict.
+
+        Args:
+            tmp_path (Path): Pytest temporary directory fixture.
+        """
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert
         assert skills == {}
 
     def test_scan_skills_nonexistent_directory_returns_empty_dict(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path
     ) -> None:
         """Non-existent skills directory should return empty dict.
 
         Args:
             tmp_path (Path): Pytest temporary directory fixture.
-            monkeypatch (pytest.MonkeyPatch): Monkeypatch fixture.
         """
         # Arrange
         nonexistent = tmp_path / "does-not-exist"
-        monkeypatch.setattr(sync_context, "SKILLS_DIR", nonexistent)
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=nonexistent)
 
         # Assert
         assert skills == {}
@@ -456,7 +371,7 @@ class TestScanSkills:
         _write_skill(tmp_path / "valid-skill", "name: valid-skill\ndescription: Valid")
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert
         with check:
@@ -485,7 +400,7 @@ class TestScanSkills:
         )
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert - first non-empty line not starting with # or - is "name: no-desc"
         assert skills["no-desc"].description == "name: no-desc"
@@ -509,7 +424,7 @@ class TestScanSkills:
         (skill_dir / "SKILL.md").write_text("# Heading\n\nPlain description text here.")
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert - first line not starting with # or - is "Plain description text here."
         assert skills["plain-skill"].description == "Plain description text here."
@@ -526,7 +441,7 @@ class TestScanSkills:
         )
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert
         assert "dir-name-skill" in skills
@@ -548,7 +463,7 @@ class TestScanSkills:
         )
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert - category should always be the dataclass default, not frontmatter value
         assert skills["my-skill"].category == "conventions"
@@ -565,7 +480,7 @@ class TestScanSkills:
         (tmp_path / "stray-file.md").write_text("Not a skill directory")
 
         # Act
-        skills = scan_skills()
+        skills = scan_skills(skills_dir=tmp_path)
 
         # Assert
         assert skills == {}
@@ -595,8 +510,7 @@ class TestScanAgents:
         )
 
         # Act
-        with patch.object(sync_context, "AGENTS_DIR", tmp_path):
-            agents = scan_agents()
+        agents = scan_agents(agents_dir=tmp_path)
 
         # Assert
         with check:
@@ -613,8 +527,7 @@ class TestScanAgents:
             tmp_path (Path): Pytest temporary directory fixture.
         """
         # Act
-        with patch.object(sync_context, "AGENTS_DIR", tmp_path):
-            agents = scan_agents()
+        agents = scan_agents(agents_dir=tmp_path)
 
         # Assert
         assert agents == {}
@@ -631,8 +544,7 @@ class TestScanAgents:
         nonexistent = tmp_path / "does-not-exist"
 
         # Act
-        with patch.object(sync_context, "AGENTS_DIR", nonexistent):
-            agents = scan_agents()
+        agents = scan_agents(agents_dir=nonexistent)
 
         # Assert
         assert agents == {}
@@ -647,8 +559,7 @@ class TestScanAgents:
         _write_md_file(tmp_path, "code-writer.md", "description: Writes code")
 
         # Act
-        with patch.object(sync_context, "AGENTS_DIR", tmp_path):
-            agents = scan_agents()
+        agents = scan_agents(agents_dir=tmp_path)
 
         # Assert
         assert "code-writer" in agents
@@ -667,8 +578,7 @@ class TestScanAgents:
         (tmp_path / "config.json").write_text("{}")
 
         # Act
-        with patch.object(sync_context, "AGENTS_DIR", tmp_path):
-            agents = scan_agents()
+        agents = scan_agents(agents_dir=tmp_path)
 
         # Assert
         with check:
@@ -692,8 +602,7 @@ class TestScanAgents:
         )
 
         # Act
-        with patch.object(sync_context, "AGENTS_DIR", tmp_path):
-            agents = scan_agents()
+        agents = scan_agents(agents_dir=tmp_path)
 
         # Assert
         assert agents["my-agent"].depends_on_skills == ["skill-a", "skill-b"]
@@ -723,8 +632,7 @@ class TestScanCommands:
         )
 
         # Act
-        with patch.object(sync_context, "COMMANDS_DIR", tmp_path):
-            commands = scan_commands()
+        commands = scan_commands(commands_dir=tmp_path)
 
         # Assert
         with check:
@@ -741,8 +649,7 @@ class TestScanCommands:
             tmp_path (Path): Pytest temporary directory fixture.
         """
         # Act
-        with patch.object(sync_context, "COMMANDS_DIR", tmp_path):
-            commands = scan_commands()
+        commands = scan_commands(commands_dir=tmp_path)
 
         # Assert
         assert commands == {}
@@ -759,8 +666,7 @@ class TestScanCommands:
         nonexistent = tmp_path / "does-not-exist"
 
         # Act
-        with patch.object(sync_context, "COMMANDS_DIR", nonexistent):
-            commands = scan_commands()
+        commands = scan_commands(commands_dir=nonexistent)
 
         # Assert
         assert commands == {}
@@ -775,8 +681,7 @@ class TestScanCommands:
         _write_md_file(tmp_path, "review.md", "description: Code review")
 
         # Act
-        with patch.object(sync_context, "COMMANDS_DIR", tmp_path):
-            commands = scan_commands()
+        commands = scan_commands(commands_dir=tmp_path)
 
         # Assert
         assert "review" in commands
@@ -793,8 +698,7 @@ class TestScanCommands:
         (tmp_path / "config.json").write_text("{}")
 
         # Act
-        with patch.object(sync_context, "COMMANDS_DIR", tmp_path):
-            commands = scan_commands()
+        commands = scan_commands(commands_dir=tmp_path)
 
         # Assert
         with check:
@@ -818,8 +722,7 @@ class TestScanCommands:
         )
 
         # Act
-        with patch.object(sync_context, "COMMANDS_DIR", tmp_path):
-            commands = scan_commands()
+        commands = scan_commands(commands_dir=tmp_path)
 
         # Assert
         with check:
@@ -850,8 +753,7 @@ class TestLoadManifest:
         manifest_path.write_text(json.dumps(manifest_data))
 
         # Act
-        with patch.object(sync_context, "MANIFEST_PATH", manifest_path):
-            loaded = load_manifest()
+        loaded = load_manifest(manifest_path=manifest_path)
 
         # Assert
         assert loaded == manifest_data
@@ -868,8 +770,7 @@ class TestLoadManifest:
         nonexistent = tmp_path / "nonexistent.json"
 
         # Act
-        with patch.object(sync_context, "MANIFEST_PATH", nonexistent):
-            loaded = load_manifest()
+        loaded = load_manifest(manifest_path=nonexistent)
 
         # Assert
         with check:
@@ -896,12 +797,11 @@ class TestLoadManifest:
         # Arrange
         nonexistent = tmp_path / "nonexistent.json"
 
-        with patch.object(sync_context, "MANIFEST_PATH", nonexistent):
-            # Act - load, directly mutate, then load again
-            first = load_manifest()
-            first["skills"].append({"name": "corrupted"})
+        # Act - load, directly mutate, then load again
+        first = load_manifest(manifest_path=nonexistent)
+        first["skills"].append({"name": "corrupted"})
 
-            second = load_manifest()
+        second = load_manifest(manifest_path=nonexistent)
 
         # Assert - second load must still have empty lists
         with check:
@@ -921,10 +821,16 @@ class TestUpdateManifest:
     """Tests for update_manifest that synchronizes manifest with discovered items."""
 
     def test_update_manifest_add_new_skill_reports_change(self) -> None:
-        """Adding a new skill should appear in the changes list."""
+        """Adding a new skill should appear in the changes list with all fields."""
         # Arrange
         manifest: dict[str, Any] = {"skills": [], "agents": [], "commands": []}
-        skills = {"new-skill": SkillInfo(name="new-skill", description="New skill")}
+        skills = {
+            "new-skill": SkillInfo(
+                name="new-skill",
+                description="New skill",
+                category="utilities",
+            )
+        }
 
         # Act
         updated, changes = update_manifest(manifest, skills, {}, {})
@@ -934,6 +840,10 @@ class TestUpdateManifest:
             assert len(updated["skills"]) == 1
         with check:
             assert updated["skills"][0]["name"] == "new-skill"
+        with check:
+            assert updated["skills"][0]["description"] == "New skill"
+        with check:
+            assert updated["skills"][0]["category"] == "utilities"
         with check:
             assert any("Added skill: new-skill" in c for c in changes)
         with check:
@@ -989,10 +899,16 @@ class TestUpdateManifest:
             assert changes == []
 
     def test_update_manifest_add_new_agent_reports_change(self) -> None:
-        """Adding a new agent should appear in the changes list."""
+        """Adding a new agent should appear in the changes list with dependencies."""
         # Arrange
         manifest: dict[str, Any] = {"skills": [], "agents": [], "commands": []}
-        agents = {"new-agent": AgentInfo(name="new-agent", description="Agent")}
+        agents = {
+            "new-agent": AgentInfo(
+                name="new-agent",
+                description="Agent",
+                depends_on_skills=["skill-a"],
+            )
+        }
 
         # Act
         updated, changes = update_manifest(manifest, {}, agents, {})
@@ -1000,6 +916,8 @@ class TestUpdateManifest:
         # Assert
         with check:
             assert len(updated["agents"]) == 1
+        with check:
+            assert updated["agents"][0]["depends_on_skills"] == ["skill-a"]
         with check:
             assert any("Added agent: new-agent" in c for c in changes)
 
@@ -1157,8 +1075,7 @@ class TestGenerateClaudeMdSections:
         manifest: dict[str, Any] = {"skills": [], "agents": [], "commands": []}
 
         # Act
-        with patch.object(sync_context, "PROJECT_ROOT", Path("/nonexistent")):
-            sections = generate_claude_md_sections({}, {}, {}, manifest)
+        sections = generate_claude_md_sections({}, {}, {}, manifest)
 
         # Assert
         expected_keys = {"Commands", "Agents", "Context Bundles", "Skills"}
@@ -1177,8 +1094,7 @@ class TestGenerateClaudeMdSections:
         commands = {"test-cmd": CommandInfo(name="test-cmd", description="Command")}
 
         # Act
-        with patch.object(sync_context, "PROJECT_ROOT", Path("/nonexistent")):
-            sections = generate_claude_md_sections(skills, agents, commands, manifest)
+        sections = generate_claude_md_sections(skills, agents, commands, manifest)
 
         # Assert - verify sections contain populated content, not just keys
         with check:
@@ -1414,8 +1330,7 @@ class TestUpdateClaudeMd:
         sections = {"Commands": "New content here"}
 
         # Act
-        with patch.object(sync_context, "CLAUDE_MD_PATH", claude_md):
-            changes = update_claude_md(sections)
+        changes = update_claude_md(sections, claude_md_path=claude_md)
 
         # Assert
         result = claude_md.read_text()
@@ -1450,8 +1365,7 @@ class TestUpdateClaudeMd:
         }
 
         # Act
-        with patch.object(sync_context, "CLAUDE_MD_PATH", claude_md):
-            changes = update_claude_md(sections)
+        changes = update_claude_md(sections, claude_md_path=claude_md)
 
         # Assert
         result = claude_md.read_text()
@@ -1482,8 +1396,7 @@ class TestUpdateClaudeMd:
         sections = {"Commands": "New content"}
 
         # Act
-        with patch.object(sync_context, "CLAUDE_MD_PATH", claude_md):
-            changes = update_claude_md(sections, dry_run=True)
+        changes = update_claude_md(sections, dry_run=True, claude_md_path=claude_md)
 
         # Assert
         with check:
@@ -1505,8 +1418,7 @@ class TestUpdateClaudeMd:
         sections = {"Commands": "Exact content"}
 
         # Act
-        with patch.object(sync_context, "CLAUDE_MD_PATH", claude_md):
-            changes = update_claude_md(sections)
+        changes = update_claude_md(sections, claude_md_path=claude_md)
 
         # Assert
         assert changes == []
@@ -1523,8 +1435,7 @@ class TestUpdateClaudeMd:
         nonexistent = tmp_path / "CLAUDE.md"
 
         # Act
-        with patch.object(sync_context, "CLAUDE_MD_PATH", nonexistent):
-            changes = update_claude_md({"Commands": "Content"})
+        changes = update_claude_md({"Commands": "Content"}, claude_md_path=nonexistent)
 
         # Assert
         with check:
@@ -1549,8 +1460,7 @@ class TestUpdateClaudeMd:
         sections = {"NonexistentSection": "New content"}
 
         # Act
-        with patch.object(sync_context, "CLAUDE_MD_PATH", claude_md):
-            changes = update_claude_md(sections)
+        changes = update_claude_md(sections, claude_md_path=claude_md)
 
         # Assert
         assert changes == []
@@ -1584,8 +1494,7 @@ class TestRegenerateBundles:
         nonexistent_script = tmp_path / "generate_bundles.py"
 
         # Act
-        with patch.object(sync_context, "GENERATE_BUNDLES_SCRIPT", nonexistent_script):
-            changes = regenerate_bundles()
+        changes = regenerate_bundles(script_path=nonexistent_script)
 
         # Assert
         assert changes == ["generate_bundles.py not found"]
@@ -1601,14 +1510,13 @@ class TestRegenerateBundles:
         # Arrange
         script = tmp_path / "generate_bundles.py"
         script.write_text("")
-        mock_result = MagicMock(returncode=0, stdout="", stderr="")
+        mock_result = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="", stderr=""
+        )
 
         # Act
-        with (
-            patch.object(sync_context, "GENERATE_BUNDLES_SCRIPT", script),
-            patch("sync_context.subprocess.run", return_value=mock_result) as mock_run,
-        ):
-            changes = regenerate_bundles()
+        with patch("sync_context.subprocess.run", return_value=mock_result) as mock_run:
+            changes = regenerate_bundles(script_path=script, project_root=tmp_path)
 
         # Assert
         with check:
@@ -1616,7 +1524,7 @@ class TestRegenerateBundles:
         with check:
             assert mock_run.call_args[0][0] == ["uv", "run", "python", str(script)]
         with check:
-            assert mock_run.call_args[1]["cwd"] == sync_context.PROJECT_ROOT
+            assert mock_run.call_args[1]["cwd"] == tmp_path
         with check:
             assert mock_run.call_args[1]["capture_output"] is True
 
@@ -1631,16 +1539,13 @@ class TestRegenerateBundles:
         # Arrange
         script = tmp_path / "generate_bundles.py"
         script.write_text("")
-        mock_result = MagicMock(
-            returncode=1, stdout="", stderr="ImportError: no module"
+        mock_result = subprocess.CompletedProcess(
+            args=[], returncode=1, stdout="", stderr="ImportError: no module"
         )
 
         # Act
-        with (
-            patch.object(sync_context, "GENERATE_BUNDLES_SCRIPT", script),
-            patch("sync_context.subprocess.run", return_value=mock_result),
-        ):
-            changes = regenerate_bundles()
+        with patch("sync_context.subprocess.run", return_value=mock_result):
+            changes = regenerate_bundles(script_path=script, project_root=tmp_path)
 
         # Assert
         with check:
@@ -1649,120 +1554,6 @@ class TestRegenerateBundles:
             assert "Bundle generation failed" in changes[0]
         with check:
             assert "ImportError" in changes[0]
-
-
-# ============================================================================
-# Test: _sync_skills (private helper, tested for edge cases)
-# ============================================================================
-
-
-class TestSyncSkillsHelper:
-    """Tests for _sync_skills private helper that merges skill lists."""
-
-    def test_sync_skills_new_skill_includes_all_fields(self) -> None:
-        """Newly added skill entry should contain expected fields."""
-        # Arrange
-        manifest: dict[str, Any] = {"skills": []}
-        skills = {
-            "new": SkillInfo(
-                name="new",
-                description="A new skill",
-                category="utilities",
-            )
-        }
-
-        # Act
-        new_skills, changes = sync_context._sync_skills(manifest, skills)
-
-        # Assert
-        entry = new_skills[0]
-        with check:
-            assert entry["name"] == "new"
-        with check:
-            assert entry["description"] == "A new skill"
-        with check:
-            assert entry["category"] == "utilities"
-        with check:
-            assert len(changes) == 1
-
-
-# ============================================================================
-# Test: _sync_agents (private helper, tested for edge cases)
-# ============================================================================
-
-
-class TestSyncAgentsHelper:
-    """Tests for _sync_agents private helper that merges agent lists."""
-
-    def test_sync_agents_new_agent_includes_depends_on_skills(self) -> None:
-        """Newly added agent entry should include its skill dependencies."""
-        # Arrange
-        manifest: dict[str, Any] = {"agents": []}
-        agents = {
-            "new": AgentInfo(
-                name="new",
-                description="Agent",
-                depends_on_skills=["skill-a", "skill-b"],
-            )
-        }
-
-        # Act
-        new_agents, changes = sync_context._sync_agents(manifest, agents)
-
-        # Assert
-        entry = new_agents[0]
-        with check:
-            assert entry["depends_on_skills"] == ["skill-a", "skill-b"]
-        with check:
-            assert len(changes) == 1
-
-
-# ============================================================================
-# Test: _sync_commands (private helper, tested for edge cases)
-# ============================================================================
-
-
-class TestSyncCommandsHelper:
-    """Tests for _sync_commands private helper that merges command lists."""
-
-    def test_sync_commands_with_no_dependencies_omits_keys(self) -> None:
-        """Command without dependencies should not have dependency keys in its entry."""
-        # Arrange
-        manifest: dict[str, Any] = {"commands": []}
-        commands = {"simple": CommandInfo(name="simple", description="Simple cmd")}
-
-        # Act
-        new_commands, _ = sync_context._sync_commands(manifest, commands)
-
-        # Assert
-        entry = new_commands[0]
-        with check:
-            assert "depends_on_agents" not in entry
-        with check:
-            assert "depends_on_skills" not in entry
-
-    def test_sync_commands_with_both_dependencies_includes_both(self) -> None:
-        """Command with both agent and skill dependencies should include both."""
-        # Arrange
-        manifest: dict[str, Any] = {"commands": []}
-        commands = {
-            "complex": CommandInfo(
-                name="complex",
-                description="Complex",
-                depends_on_agents=["agent-a"],
-                depends_on_skills=["skill-x"],
-            )
-        }
-
-        # Act
-        new_commands, _ = sync_context._sync_commands(manifest, commands)
-
-        # Assert
-        entry = new_commands[0]
-        with check:
-            assert entry["depends_on_agents"] == ["agent-a"]
-        with check:
-            assert entry["depends_on_skills"] == ["skill-x"]
 
 
 # ============================================================================
@@ -1780,13 +1571,13 @@ class TestMain:
         Args:
             monkeypatch (pytest.MonkeyPatch): Monkeypatch fixture.
         """
-        monkeypatch.setattr(sync_context, "scan_skills", lambda: {})
-        monkeypatch.setattr(sync_context, "scan_agents", lambda: {})
-        monkeypatch.setattr(sync_context, "scan_commands", lambda: {})
+        monkeypatch.setattr(sync_context, "scan_skills", lambda **_kwargs: {})
+        monkeypatch.setattr(sync_context, "scan_agents", lambda **_kwargs: {})
+        monkeypatch.setattr(sync_context, "scan_commands", lambda **_kwargs: {})
         monkeypatch.setattr(
             sync_context,
             "load_manifest",
-            lambda: {"skills": [], "agents": [], "commands": []},
+            lambda **_kwargs: {"skills": [], "agents": [], "commands": []},
         )
         monkeypatch.setattr(
             sync_context,
@@ -1860,23 +1651,27 @@ class TestMain:
             "sys.argv", ["sync_context.py", "--dry-run", "--skip-bundles"]
         )
         manifest_path = tmp_path / "manifest.json"
-        monkeypatch.setattr(sync_context, "MANIFEST_PATH", manifest_path)
         monkeypatch.setattr(
             sync_context,
             "update_manifest",
             lambda m, _s, _a, _c: (m, ["Added skill: test"]),
         )
-        mock_update_claude_md = MagicMock(return_value=[])
-        monkeypatch.setattr(sync_context, "update_claude_md", mock_update_claude_md)
+        captured_kwargs: dict[str, Any] = {}
+
+        def fake_update_claude_md(_sections: Any, **kwargs: Any) -> list[str]:
+            captured_kwargs.update(kwargs)
+            return []
+
+        monkeypatch.setattr(sync_context, "update_claude_md", fake_update_claude_md)
 
         # Act
-        sync_context.main()
+        sync_context.main(manifest_path=manifest_path)
 
         # Assert
         with check:
             assert not manifest_path.exists()
         with check:
-            assert mock_update_claude_md.call_args[1]["dry_run"] is True
+            assert captured_kwargs["dry_run"] is True
 
     def test_main_skip_bundles_does_not_call_regenerate(
         self, monkeypatch: pytest.MonkeyPatch
@@ -1894,14 +1689,19 @@ class TestMain:
         monkeypatch.setattr(
             sync_context, "update_claude_md", lambda _sections, **_kwargs: []
         )
-        mock_regenerate = MagicMock()
-        monkeypatch.setattr(sync_context, "regenerate_bundles", mock_regenerate)
+        called: list[bool] = []
+
+        def fake_regenerate(**_kwargs: Any) -> list[str]:
+            called.append(True)
+            return []
+
+        monkeypatch.setattr(sync_context, "regenerate_bundles", fake_regenerate)
 
         # Act
         sync_context.main()
 
         # Assert
-        mock_regenerate.assert_not_called()
+        assert called == []
 
     def test_main_writes_manifest_when_changes_exist(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -1915,7 +1715,6 @@ class TestMain:
         # Arrange
         monkeypatch.setattr("sys.argv", ["sync_context.py", "--skip-bundles"])
         manifest_path = tmp_path / "manifest.json"
-        monkeypatch.setattr(sync_context, "MANIFEST_PATH", manifest_path)
         monkeypatch.setattr(
             sync_context,
             "update_manifest",
@@ -1926,7 +1725,7 @@ class TestMain:
         )
 
         # Act
-        sync_context.main()
+        sync_context.main(manifest_path=manifest_path)
 
         # Assert
         assert manifest_path.exists()
