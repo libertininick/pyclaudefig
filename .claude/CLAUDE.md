@@ -28,7 +28,7 @@ Guidance for Claude Code when working in this repository.
    - Writing/modifying classes → `class-design/SKILL.md`, `class-design/rules.md`
    - Naming anything → `naming-conventions/SKILL.md`
    - Refactoring complex code → `complexity-refactoring/SKILL.md`
-3. **Fetch docs when uncertain** - Use Context7 MCP (see `frameworks` skill for IDs)
+3. **Fetch docs when uncertain** - Use `fetch-docs` skill (see `frameworks` skill for doc IDs)
 4. **Mandatory task delegation** - See Task Delegation section below; NEVER skip
 5. **Never hallucinate** - Ask if uncertain about paths, modules, or APIs
 6. **Never delete code** unless explicitly instructed
@@ -161,7 +161,7 @@ Skills provide coding standards and conventions. See `.claude/manifest.json` for
 - **Conventions**: `class-design`, `code-organization`, `complexity-refactoring`, `data-structures`, `docstring-conventions`, `frameworks`, `function-design`, `naming-conventions`, `pythonic-conventions`, `test-writing`, `type-hints`
 - **Assessment**: `maintainability`, `test-quality`, `testability`
 - **Templates**: `plan-template`, `pr-description-template`, `review-template`, `skill-template`
-- **Utilities**: `explore-project`, `run-python-safely`, `validate-code`, `validate-manifest`, `write-markdown-output`
+- **Utilities**: `explore-project`, `fetch-docs`, `run-python-safely`, `validate-code`, `validate-manifest`, `write-markdown-output`
 
 **Note**: Agents should load their context bundles (above) rather than invoking skills individually.
 

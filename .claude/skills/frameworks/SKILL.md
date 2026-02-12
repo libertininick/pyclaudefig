@@ -7,18 +7,18 @@ user-invocable: false
 
 # Frameworks
 
-Approved frameworks and libraries for this codebase with Context7 IDs for documentation lookup.
+Approved frameworks and libraries for this codebase.
 
 ## Critical Rules
 
 1. **Use ONLY approved frameworks** - NEVER introduce alternatives or substitutes
-2. **Fetch docs when uncertain** - Use Context7 MCP with the library ID directly
+2. **Fetch docs when uncertain** - Use the `fetch-docs` skill with the doc ID from the table below
 3. **Use modern patterns** - Avoid deprecated methods; check latest docs if uncertain
 
 ## Quick Reference
 
-| Framework | Purpose | Context7 ID | Docs |
-|-----------|---------|-------------|------|
+| Framework | Purpose | Doc ID | Docs |
+|-----------|---------|--------|------|
 | pytest | Testing | `/pytest-dev/pytest` | [docs](https://docs.pytest.org/en/stable/) |
 | pytest-check | Multiple failures per test | `/okken/pytest-check` | [docs](https://github.com/okken/pytest-check) |
 | ruff | Linter and formatter | `/astral-sh/ruff` | [docs](https://docs.astral.sh/ruff/) |
@@ -27,8 +27,4 @@ Approved frameworks and libraries for this codebase with Context7 IDs for docume
 
 ## Fetching Documentation
 
-When uncertain about API details, use Context7 MCP directly with the library ID:
-
-```
-mcp__context7__query-docs(libraryId="/pydantic/pydantic", query="field validators")
-```
+When uncertain about API details, use the `fetch-docs` skill with the doc ID from the Quick Reference table above.

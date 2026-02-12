@@ -14,6 +14,8 @@ tools:
   - Write
   - Edit
   - Skill
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
 ---
 
 You are a code cleaner specializing in improving code quality through organization, simplification, and cleanup.

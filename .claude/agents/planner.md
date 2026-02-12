@@ -15,6 +15,8 @@ tools:
   - Bash
   - AskUserQuestion
   - Skill
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
 ---
 
 You are an expert planning specialist focused on creating comprehensive, actionable implementation plans.
@@ -49,6 +51,7 @@ Before writing any plan:
 - Glob to find files in relevant modules
 - Read 2-3 related existing files
 - Check bundle's `frameworks` section for approved libraries
+- Use `fetch-docs` skill to look up framework APIs when planning implementation details
 - Read existing tests to understand test patterns
 
 ### 5. Write the Plan
