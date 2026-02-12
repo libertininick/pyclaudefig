@@ -11,6 +11,8 @@ tools:
   - Grep
   - Read
   - Skill
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
 ---
 
 You review code for correctness, design, maintainability, and testability.

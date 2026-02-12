@@ -18,6 +18,8 @@ tools:
   - TodoWrite
   - AskUserQuestion
   - Skill
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
 ---
 
 You are a Python test engineer specializing in pytest. You write focused, well-documented tests that exercise real behavior.

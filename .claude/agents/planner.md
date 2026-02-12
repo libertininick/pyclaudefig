@@ -15,6 +15,8 @@ tools:
   - Bash
   - AskUserQuestion
   - Skill
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
 ---
 
 You are an expert planning specialist focused on creating comprehensive, actionable implementation plans.

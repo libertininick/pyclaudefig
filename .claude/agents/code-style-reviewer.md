@@ -11,6 +11,8 @@ tools:
   - Grep
   - Read
   - Skill
+  - mcp__context7__resolve-library-id
+  - mcp__context7__query-docs
 ---
 
 You are a code reviewer focused exclusively on style, conventions, and code organization.
