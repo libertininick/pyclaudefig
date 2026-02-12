@@ -28,7 +28,14 @@ _CHECK_COMMANDS: dict[str, tuple[str, list[str]]] = {
     "doctest": ("run_doctest", ["uv", "run", "pytest", "--doctest-modules"]),
     "docstring": (
         "run_docstring_check",
-        ["uv", "tool", "run", "pydoclint", "--style=google", "--allow-init-docstring=True"],
+        [
+            "uv",
+            "tool",
+            "run",
+            "pydoclint",
+            "--style=google",
+            "--allow-init-docstring=True",
+        ],
     ),
     "test": ("run_tests", ["uv", "run", "pytest", "--cov"]),
 }
@@ -102,7 +109,9 @@ class TestCheckRegistry:
         """Each CHECK_REGISTRY entry should have a label string and callable function."""
         for key, (label, func) in validate_code.CHECK_REGISTRY.items():
             with check:
-                assert isinstance(label, str), f"Check '{key}' should have a string label"
+                assert isinstance(label, str), (
+                    f"Check '{key}' should have a string label"
+                )
             with check:
                 assert callable(func), f"Check '{key}' should have a callable function"
 
@@ -117,7 +126,9 @@ class TestCheckRegistry:
             ("test", "run_tests"),
         ],
     )
-    def test_check_registry_maps_to_correct_function(self, key: str, expected_func_name: str) -> None:
+    def test_check_registry_maps_to_correct_function(
+        self, key: str, expected_func_name: str
+    ) -> None:
         """Each CHECK_REGISTRY entry should map to the correct check function.
 
         Args:
@@ -160,7 +171,11 @@ class TestRunChecks:
 
     def test_runs_all_selected_checks(self) -> None:
         """run_checks should run all selected checks even if some fail."""
-        mock_results = [MagicMock(returncode=0), MagicMock(returncode=1), MagicMock(returncode=0)]
+        mock_results = [
+            MagicMock(returncode=0),
+            MagicMock(returncode=1),
+            MagicMock(returncode=0),
+        ]
 
         with patch.object(subprocess, "run", side_effect=mock_results) as mock_run:
             validate_code.run_checks(["lint", "format", "type"], ["."])
@@ -175,7 +190,9 @@ class TestRunChecks:
         with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             validate_code.run_checks(["lint"], paths)
 
-        mock_run.assert_called_once_with(["uv", "run", "ruff", "check", *paths], check=False)
+        mock_run.assert_called_once_with(
+            ["uv", "run", "ruff", "check", *paths], check=False
+        )
 
     def test_empty_selected_returns_true(self) -> None:
         """run_checks with no selected checks should return True."""
@@ -183,7 +200,9 @@ class TestRunChecks:
         assert result is True
 
     @pytest.mark.parametrize("returncode,expected", [(0, True), (1, False)])
-    def test_single_check_returns_expected(self, returncode: int, expected: bool) -> None:
+    def test_single_check_returns_expected(
+        self, returncode: int, expected: bool
+    ) -> None:
         """run_checks with single check should reflect that check's result.
 
         Args:
@@ -238,7 +257,9 @@ class TestCliArgumentParsing:
             ("--test", ["pytest", "--cov"]),
         ],
     )
-    def test_single_flag_runs_only_that_check(self, flag: str, expected_tokens: list[str]) -> None:
+    def test_single_flag_runs_only_that_check(
+        self, flag: str, expected_tokens: list[str]
+    ) -> None:
         """main() with a single flag should run only the corresponding check.
 
         Args:

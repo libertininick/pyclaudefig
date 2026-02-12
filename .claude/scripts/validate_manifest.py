@@ -19,7 +19,6 @@ Exit codes:
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any, Final
@@ -27,29 +26,28 @@ from typing import Any, Final
 CLAUDE_DIR: Final[Path] = Path(__file__).parent.parent
 MANIFEST_PATH: Final[Path] = CLAUDE_DIR / "manifest.json"
 
-SEMVER_PATTERN: Final[re.Pattern[str]] = re.compile(r"^\d+\.\d+\.\d+$")
+SKILL_REQUIRED_FIELDS: Final[frozenset[str]] = frozenset(
+    {
+        "name",
+        "category",
+        "description",
+    }
+)
 
-SKILL_REQUIRED_FIELDS: Final[frozenset[str]] = frozenset({
-    "name",
-    "category",
-    "description",
-    "user_invocable",
-    "version",
-})
+AGENT_REQUIRED_FIELDS: Final[frozenset[str]] = frozenset(
+    {
+        "name",
+        "description",
+        "depends_on_skills",
+    }
+)
 
-AGENT_REQUIRED_FIELDS: Final[frozenset[str]] = frozenset({
-    "name",
-    "description",
-    "model",
-    "version",
-    "depends_on_skills",
-})
-
-COMMAND_REQUIRED_FIELDS: Final[frozenset[str]] = frozenset({
-    "name",
-    "description",
-    "version",
-})
+COMMAND_REQUIRED_FIELDS: Final[frozenset[str]] = frozenset(
+    {
+        "name",
+        "description",
+    }
+)
 
 
 def load_manifest() -> dict[str, Any] | None:
@@ -68,18 +66,6 @@ def load_manifest() -> dict[str, Any] | None:
     except FileNotFoundError:
         print(f"Manifest file not found: {MANIFEST_PATH}", file=sys.stderr)
         return None
-
-
-def is_valid_semver(version: str) -> bool:
-    """Check if a version string matches semver format (e.g., '1.0.0').
-
-    Args:
-        version (str): The version string to validate.
-
-    Returns:
-        bool: True if version matches semver format.
-    """
-    return bool(SEMVER_PATTERN.match(version))
 
 
 def validate_required_fields(
@@ -101,28 +87,9 @@ def validate_required_fields(
     """
     missing_fields = required_fields - set(entry.keys())
     if missing_fields:
-        return [f"{entry_type} '{entry_name}' missing required fields: {', '.join(sorted(missing_fields))}"]
-    return []
-
-
-def validate_version_format(
-    entry: dict[str, Any],
-    entry_type: str,
-    entry_name: str,
-) -> list[str]:
-    """Validate that an entry's version field has semver format.
-
-    Args:
-        entry (dict[str, Any]): The entry dictionary to validate.
-        entry_type (str): Type of entry (e.g., 'skill', 'agent', 'command').
-        entry_name (str): Name of the entry for error messages.
-
-    Returns:
-        list[str]: List of validation error messages.
-    """
-    version = entry.get("version")
-    if version is not None and not is_valid_semver(str(version)):
-        return [f"{entry_type} '{entry_name}' has invalid version format: '{version}' (expected semver like '1.0.0')"]
+        return [
+            f"{entry_type} '{entry_name}' missing required fields: {', '.join(sorted(missing_fields))}"
+        ]
     return []
 
 
@@ -132,8 +99,7 @@ def validate_skills(
 ) -> tuple[list[str], set[str]]:
     """Validate all skills in the manifest.
 
-    Checks for duplicate names, required fields, version format, and valid
-    categories.
+    Checks for duplicate names, required fields, and valid categories.
 
     Args:
         manifest (dict[str, Any]): The manifest data.
@@ -155,10 +121,9 @@ def validate_skills(
         skill_names.add(skill_name)
 
         # Check required fields
-        errors.extend(validate_required_fields(skill, SKILL_REQUIRED_FIELDS, "Skill", skill_name))
-
-        # Check version format
-        errors.extend(validate_version_format(skill, "Skill", skill_name))
+        errors.extend(
+            validate_required_fields(skill, SKILL_REQUIRED_FIELDS, "Skill", skill_name)
+        )
 
         # Check category is valid
         category = skill.get("category")
@@ -177,8 +142,8 @@ def validate_agents(
 ) -> tuple[list[str], set[str]]:
     """Validate all agents in the manifest.
 
-    Checks for duplicate names, required fields, version format, and valid
-    dependency references.
+    Checks for duplicate names, required fields, and valid dependency
+    references.
 
     Args:
         manifest (dict[str, Any]): The manifest data.
@@ -201,10 +166,9 @@ def validate_agents(
         agent_names.add(agent_name)
 
         # Check required fields
-        errors.extend(validate_required_fields(agent, AGENT_REQUIRED_FIELDS, "Agent", agent_name))
-
-        # Check version format
-        errors.extend(validate_version_format(agent, "Agent", agent_name))
+        errors.extend(
+            validate_required_fields(agent, AGENT_REQUIRED_FIELDS, "Agent", agent_name)
+        )
 
         # Check depends_on_skills references existing skills
         depends_on = agent.get("depends_on_skills", [])
@@ -249,8 +213,8 @@ def validate_commands(
 ) -> list[str]:
     """Validate all commands in the manifest.
 
-    Checks for duplicate names, required fields, version format, and valid
-    skill/agent dependency references.
+    Checks for duplicate names, required fields, and valid skill/agent
+    dependency references.
 
     Args:
         manifest (dict[str, Any]): The manifest data.
@@ -275,22 +239,29 @@ def validate_commands(
         command_names.add(command_name)
 
         # Check required fields
-        errors.extend(validate_required_fields(command, COMMAND_REQUIRED_FIELDS, "Command", command_name))
-
-        # Check version format
-        errors.extend(validate_version_format(command, "Command", command_name))
+        errors.extend(
+            validate_required_fields(
+                command, COMMAND_REQUIRED_FIELDS, "Command", command_name
+            )
+        )
 
         # Check depends_on_skills references existing skills
         errors.extend(
             _validate_dependency_references(
-                command.get("depends_on_skills", []), valid_skill_names, command_name, "skill"
+                command.get("depends_on_skills", []),
+                valid_skill_names,
+                command_name,
+                "skill",
             )
         )
 
         # Check depends_on_agents references existing agents
         errors.extend(
             _validate_dependency_references(
-                command.get("depends_on_agents", []), valid_agent_names, command_name, "agent"
+                command.get("depends_on_agents", []),
+                valid_agent_names,
+                command_name,
+                "agent",
             )
         )
 

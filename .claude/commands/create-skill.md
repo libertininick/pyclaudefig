@@ -90,7 +90,6 @@ Create `SKILL.md` with this structure:
 ```yaml
 ---
 name: <skill-name>
-version: 1.0.0
 description: <What this skill does. Claude uses this to decide when to load it.>
 user-invocable: <true/false based on type>
 disable-model-invocation: <true if task-only>
@@ -110,9 +109,7 @@ Add entry to `.claude/manifest.json` in the `skills` array:
 {
   "name": "<skill-name>",
   "category": "<category>",
-  "description": "<Brief description>",
-  "user_invocable": <true/false>,
-  "version": "1.0.0"
+  "description": "<Brief description>"
 }
 ```
 

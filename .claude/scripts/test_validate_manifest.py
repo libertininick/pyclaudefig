@@ -2,7 +2,7 @@
 
 This module provides comprehensive tests for validate_manifest.py, covering
 valid manifests, invalid JSON, missing fields, invalid categories, missing
-dependencies, duplicate names, and invalid version formats.
+dependencies, and duplicate names.
 """
 
 # ruff: noqa: PLR6301, S101 # this is a test module
@@ -40,23 +40,17 @@ def valid_manifest() -> dict[str, Any]:
                 "name": "naming-conventions",
                 "category": "conventions",
                 "description": "Python naming conventions",
-                "user_invocable": True,
-                "version": "1.0.0",
             },
             {
                 "name": "run-python-safely",
                 "category": "utilities",
                 "description": "Execute Python safely",
-                "user_invocable": True,
-                "version": "2.1.0",
             },
         ],
         "agents": [
             {
                 "name": "python-code-writer",
                 "description": "Writes Python code",
-                "model": "opus",
-                "version": "1.0.0",
                 "depends_on_skills": ["naming-conventions"],
             },
         ],
@@ -64,7 +58,6 @@ def valid_manifest() -> dict[str, Any]:
             {
                 "name": "clean",
                 "description": "Clean Python code",
-                "version": "1.0.0",
                 "depends_on_skills": ["naming-conventions"],
                 "depends_on_agents": ["python-code-writer"],
             },
@@ -96,7 +89,9 @@ def manifest_file(tmp_path: Path, valid_manifest: dict[str, Any]) -> Path:
 class TestValidManifest:
     """Tests for valid manifest validation."""
 
-    def test_validate_manifest_valid_returns_no_errors(self, valid_manifest: dict[str, Any]) -> None:
+    def test_validate_manifest_valid_returns_no_errors(
+        self, valid_manifest: dict[str, Any]
+    ) -> None:
         """Valid manifest should return empty error list.
 
         Args:
@@ -177,7 +172,9 @@ class TestInvalidJsonSyntax:
         # Assert
         assert result is None
 
-    def test_load_manifest_valid_json_returns_dict(self, manifest_file: Path, valid_manifest: dict[str, Any]) -> None:
+    def test_load_manifest_valid_json_returns_dict(
+        self, manifest_file: Path, valid_manifest: dict[str, Any]
+    ) -> None:
         """Valid JSON file should return parsed dictionary.
 
         Args:
@@ -209,8 +206,6 @@ class TestMissingRequiredFields:
                 {
                     "category": "conventions",
                     "description": "Test skill",
-                    "user_invocable": True,
-                    "version": "1.0.0",
                 }
             ],
         }
@@ -234,7 +229,7 @@ class TestMissingRequiredFields:
                 {
                     "name": "test-skill",
                     "category": "conventions",
-                    # Missing: description, user_invocable, version
+                    # Missing: description
                 }
             ],
         }
@@ -246,10 +241,6 @@ class TestMissingRequiredFields:
         assert len(errors) == 1
         with check:
             assert "description" in errors[0]
-        with check:
-            assert "user_invocable" in errors[0]
-        with check:
-            assert "version" in errors[0]
 
     def test_validate_agents_missing_required_fields_returns_error(self) -> None:
         """Agent missing required fields should produce error."""
@@ -258,7 +249,7 @@ class TestMissingRequiredFields:
             "agents": [
                 {
                     "name": "test-agent",
-                    # Missing: description, model, version, depends_on_skills
+                    # Missing: description, depends_on_skills
                 }
             ],
         }
@@ -271,10 +262,6 @@ class TestMissingRequiredFields:
         with check:
             assert "description" in errors[0]
         with check:
-            assert "model" in errors[0]
-        with check:
-            assert "version" in errors[0]
-        with check:
             assert "depends_on_skills" in errors[0]
 
     def test_validate_commands_missing_required_fields_returns_error(self) -> None:
@@ -284,7 +271,7 @@ class TestMissingRequiredFields:
             "commands": [
                 {
                     "name": "test-command",
-                    # Missing: description, version
+                    # Missing: description
                 }
             ],
         }
@@ -296,8 +283,6 @@ class TestMissingRequiredFields:
         assert len(errors) == 1
         with check:
             assert "description" in errors[0]
-        with check:
-            assert "version" in errors[0]
 
 
 # ============================================================================
@@ -318,8 +303,6 @@ class TestInvalidCategories:
                     "name": "test-skill",
                     "category": "nonexistent-category",
                     "description": "Test skill",
-                    "user_invocable": True,
-                    "version": "1.0.0",
                 }
             ],
         }
@@ -346,8 +329,6 @@ class TestInvalidCategories:
                     "name": "test-skill",
                     "category": "conventions",
                     "description": "Test skill",
-                    "user_invocable": True,
-                    "version": "1.0.0",
                 }
             ],
         }
@@ -375,8 +356,6 @@ class TestMissingDependencies:
                 {
                     "name": "test-agent",
                     "description": "Test agent",
-                    "model": "opus",
-                    "version": "1.0.0",
                     "depends_on_skills": ["nonexistent-skill"],
                 }
             ],
@@ -401,8 +380,6 @@ class TestMissingDependencies:
                 {
                     "name": "test-agent",
                     "description": "Test agent",
-                    "model": "opus",
-                    "version": "1.0.0",
                     "depends_on_skills": ["existing-skill"],
                 }
             ],
@@ -423,14 +400,15 @@ class TestMissingDependencies:
                 {
                     "name": "test-command",
                     "description": "Test command",
-                    "version": "1.0.0",
                     "depends_on_skills": ["nonexistent-skill"],
                 }
             ],
         }
 
         # Act
-        errors = validate_manifest.validate_commands(manifest, {"existing-skill"}, set())
+        errors = validate_manifest.validate_commands(
+            manifest, {"existing-skill"}, set()
+        )
 
         # Assert
         assert len(errors) == 1
@@ -447,14 +425,15 @@ class TestMissingDependencies:
                 {
                     "name": "test-command",
                     "description": "Test command",
-                    "version": "1.0.0",
                     "depends_on_agents": ["nonexistent-agent"],
                 }
             ],
         }
 
         # Act
-        errors = validate_manifest.validate_commands(manifest, set(), {"existing-agent"})
+        errors = validate_manifest.validate_commands(
+            manifest, set(), {"existing-agent"}
+        )
 
         # Assert
         assert len(errors) == 1
@@ -473,7 +452,6 @@ class TestMissingDependencies:
                 {
                     "name": "test-command",
                     "description": "Test command",
-                    "version": "1.0.0",
                     "depends_on_skills": ["unknown-skill-1", "unknown-skill-2"],
                     "depends_on_agents": ["unknown-agent"],
                 }
@@ -511,15 +489,11 @@ class TestDuplicateNames:
                     "name": "duplicate-skill",
                     "category": "conventions",
                     "description": "First skill",
-                    "user_invocable": True,
-                    "version": "1.0.0",
                 },
                 {
                     "name": "duplicate-skill",
                     "category": "conventions",
                     "description": "Second skill",
-                    "user_invocable": True,
-                    "version": "1.0.0",
                 },
             ],
         }
@@ -542,15 +516,11 @@ class TestDuplicateNames:
                 {
                     "name": "duplicate-agent",
                     "description": "First agent",
-                    "model": "opus",
-                    "version": "1.0.0",
                     "depends_on_skills": [],
                 },
                 {
                     "name": "duplicate-agent",
                     "description": "Second agent",
-                    "model": "sonnet",
-                    "version": "1.0.0",
                     "depends_on_skills": [],
                 },
             ],
@@ -574,12 +544,10 @@ class TestDuplicateNames:
                 {
                     "name": "duplicate-command",
                     "description": "First command",
-                    "version": "1.0.0",
                 },
                 {
                     "name": "duplicate-command",
                     "description": "Second command",
-                    "version": "1.0.0",
                 },
             ],
         }
@@ -593,117 +561,6 @@ class TestDuplicateNames:
             assert "Duplicate command name" in errors[0]
         with check:
             assert "duplicate-command" in errors[0]
-
-
-# ============================================================================
-# Test: Invalid Version Format
-# ============================================================================
-
-
-class TestInvalidVersionFormat:
-    """Tests for detection of invalid version formats."""
-
-    @pytest.mark.parametrize(
-        ("version", "expected_valid"),
-        [
-            ("1.0.0", True),
-            ("0.0.1", True),
-            ("10.20.30", True),
-            ("1.0", False),
-            ("1", False),
-            ("v1.0.0", False),
-            ("1.0.0-beta", False),
-            ("1.0.0.0", False),
-            ("", False),
-            ("abc", False),
-        ],
-    )
-    def test_is_valid_semver(self, version: str, *, expected_valid: bool) -> None:
-        """Test semver validation with various version formats.
-
-        Args:
-            version (str): Version string to validate.
-            expected_valid (bool): Whether the version should be valid.
-        """
-        # Act
-        result = validate_manifest.is_valid_semver(version)
-
-        # Assert
-        assert result == expected_valid
-
-    def test_validate_skills_invalid_version_returns_error(self) -> None:
-        """Skill with invalid version format should produce error."""
-        # Arrange
-        manifest = {
-            "categories": {"conventions": {"description": "Test"}},
-            "skills": [
-                {
-                    "name": "test-skill",
-                    "category": "conventions",
-                    "description": "Test skill",
-                    "user_invocable": True,
-                    "version": "v1.0",  # Invalid format
-                }
-            ],
-        }
-
-        # Act
-        errors, _ = validate_manifest.validate_skills(manifest, {"conventions"})
-
-        # Assert
-        assert len(errors) == 1
-        with check:
-            assert "invalid version format" in errors[0]
-        with check:
-            assert "v1.0" in errors[0]
-
-    def test_validate_agents_invalid_version_returns_error(self) -> None:
-        """Agent with invalid version format should produce error."""
-        # Arrange
-        manifest = {
-            "agents": [
-                {
-                    "name": "test-agent",
-                    "description": "Test agent",
-                    "model": "opus",
-                    "version": "1.0",  # Invalid format
-                    "depends_on_skills": [],
-                }
-            ],
-        }
-
-        # Act
-        errors, _ = validate_manifest.validate_agents(manifest, set())
-
-        # Assert
-        assert len(errors) == 1
-        with check:
-            assert "invalid version format" in errors[0]
-        with check:
-            assert "1.0" in errors[0]
-
-    def test_validate_commands_invalid_version_returns_error(self) -> None:
-        """Command with invalid version format should produce error."""
-        # Arrange
-        manifest = {
-            "commands": [
-                {
-                    "name": "test-command",
-                    "description": "Test command",
-                    "version": "latest",  # Invalid format
-                }
-            ],
-        }
-
-        # Act
-        errors = validate_manifest.validate_commands(manifest, set(), set())
-
-        # Assert
-        assert len(errors) == 1
-        with check:
-            assert "invalid version format" in errors[0]
-        with check:
-            assert "latest" in errors[0]
 
 
 # ============================================================================
@@ -806,11 +663,13 @@ class TestHelperFunctions:
     def test_validate_required_fields_all_present_returns_empty_list(self) -> None:
         """Entry with all required fields should return empty error list."""
         # Arrange
-        entry = {"name": "test", "version": "1.0.0", "description": "Test"}
-        required_fields = frozenset({"name", "version", "description"})
+        entry = {"name": "test", "description": "Test"}
+        required_fields = frozenset({"name", "description"})
 
         # Act
-        errors = validate_manifest.validate_required_fields(entry, required_fields, "Test", "test-entry")
+        errors = validate_manifest.validate_required_fields(
+            entry, required_fields, "Test", "test-entry"
+        )
 
         # Assert
         assert errors == []
@@ -819,54 +678,17 @@ class TestHelperFunctions:
         """Entry missing required fields should return error list."""
         # Arrange
         entry = {"name": "test"}
-        required_fields = frozenset({"name", "version", "description"})
+        required_fields = frozenset({"name", "description"})
 
         # Act
-        errors = validate_manifest.validate_required_fields(entry, required_fields, "Test", "test-entry")
+        errors = validate_manifest.validate_required_fields(
+            entry, required_fields, "Test", "test-entry"
+        )
 
         # Assert
         assert len(errors) == 1
-        with check:
-            assert "version" in errors[0]
         with check:
             assert "description" in errors[0]
-
-    def test_validate_version_format_valid_returns_empty_list(self) -> None:
-        """Entry with valid version should return empty error list."""
-        # Arrange
-        entry = {"version": "1.0.0"}
-
-        # Act
-        errors = validate_manifest.validate_version_format(entry, "Test", "test-entry")
-
-        # Assert
-        assert errors == []
-
-    def test_validate_version_format_missing_returns_empty_list(self) -> None:
-        """Entry without version field should return empty error list."""
-        # Arrange
-        entry: dict[str, Any] = {}
-
-        # Act
-        errors = validate_manifest.validate_version_format(entry, "Test", "test-entry")
-
-        # Assert
-        assert errors == []
-
-    def test_validate_version_format_invalid_returns_error(self) -> None:
-        """Entry with invalid version should return error list."""
-        # Arrange
-        entry = {"version": "bad-version"}
-
-        # Act
-        errors = validate_manifest.validate_version_format(entry, "Test", "test-entry")
-
-        # Assert
-        assert len(errors) == 1
-        with check:
-            assert "invalid version format" in errors[0]
-        with check:
-            assert "bad-version" in errors[0]
 
     def test_validate_dependency_references_all_valid_returns_empty_list(self) -> None:
         """Valid dependencies should return empty error list."""
@@ -875,7 +697,9 @@ class TestHelperFunctions:
         valid_names = {"skill-a", "skill-b", "skill-c"}
 
         # Act
-        errors = validate_manifest._validate_dependency_references(dependencies, valid_names, "test-command", "skill")
+        errors = validate_manifest._validate_dependency_references(
+            dependencies, valid_names, "test-command", "skill"
+        )
 
         # Assert
         assert errors == []
@@ -887,7 +711,9 @@ class TestHelperFunctions:
         valid_names = {"skill-a"}
 
         # Act
-        errors = validate_manifest._validate_dependency_references(dependencies, valid_names, "test-command", "skill")
+        errors = validate_manifest._validate_dependency_references(
+            dependencies, valid_names, "test-command", "skill"
+        )
 
         # Assert
         assert len(errors) == 1
@@ -915,16 +741,12 @@ class TestFullManifestValidation:
                     "name": "skill-a",
                     "category": "conventions",
                     "description": "Skill A",
-                    "user_invocable": True,
-                    "version": "1.0.0",
                 },
             ],
             "agents": [
                 {
                     "name": "agent-a",
                     "description": "Agent A",
-                    "model": "opus",
-                    "version": "1.0.0",
                     "depends_on_skills": ["skill-a"],
                 },
             ],
@@ -932,7 +754,6 @@ class TestFullManifestValidation:
                 {
                     "name": "command-a",
                     "description": "Command A",
-                    "version": "1.0.0",
                     "depends_on_skills": ["skill-a"],
                     "depends_on_agents": ["agent-a"],
                 },
@@ -955,30 +776,24 @@ class TestFullManifestValidation:
                     "name": "skill-a",
                     "category": "invalid-category",  # Error: invalid category
                     "description": "Skill A",
-                    "user_invocable": True,
-                    "version": "bad",  # Error: invalid version
                 },
                 {
                     "name": "skill-a",  # Error: duplicate name
                     "category": "conventions",
                     "description": "Duplicate",
-                    "user_invocable": True,
-                    "version": "1.0.0",
                 },
             ],
             "agents": [
                 {
                     "name": "agent-a",
                     "description": "Agent A",
-                    "model": "opus",
-                    "version": "1.0.0",
                     "depends_on_skills": ["nonexistent-skill"],  # Error: unknown skill
                 },
             ],
             "commands": [
                 {
                     "name": "command-a",
-                    # Missing: description, version  # Error: missing fields
+                    # Missing: description  # Error: missing fields
                 },
             ],
         }
@@ -988,11 +803,9 @@ class TestFullManifestValidation:
 
         # Assert - should have multiple errors
         with check:
-            assert len(errors) >= 5  # At least 5 distinct errors
+            assert len(errors) >= 4  # At least 4 distinct errors
         with check:
             assert any("invalid category" in e for e in errors)
-        with check:
-            assert any("invalid version format" in e for e in errors)
         with check:
             assert any("Duplicate skill name" in e for e in errors)
         with check:

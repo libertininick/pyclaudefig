@@ -64,7 +64,9 @@ def run_format_check(paths: list[str]) -> bool:
         bool: True if formatting passed, False otherwise.
     """
     print("\n--- Format (ruff format --check) ---")
-    result = subprocess.run(["uv", "run", "ruff", "format", "--check", *paths], check=False)
+    result = subprocess.run(
+        ["uv", "run", "ruff", "format", "--check", *paths], check=False
+    )
     passed = result.returncode == 0
     print(f"--- Format: {_PASS if passed else _FAIL} ---\n")
     return passed
@@ -96,7 +98,9 @@ def run_doctest(paths: list[str]) -> bool:
         bool: True if all doctests passed, False otherwise.
     """
     print("\n--- Doctest (pytest --doctest-modules) ---")
-    result = subprocess.run(["uv", "run", "pytest", "--doctest-modules", *paths], check=False)
+    result = subprocess.run(
+        ["uv", "run", "pytest", "--doctest-modules", *paths], check=False
+    )
     passed = result.returncode == 0
     print(f"--- Doctest: {_PASS if passed else _FAIL} ---\n")
     return passed
@@ -113,7 +117,15 @@ def run_docstring_check(paths: list[str]) -> bool:
     """
     print("\n--- Docstring (pydoclint) ---")
     result = subprocess.run(
-        ["uv", "tool", "run", "pydoclint", "--style=google", "--allow-init-docstring=True", *paths],
+        [
+            "uv",
+            "tool",
+            "run",
+            "pydoclint",
+            "--style=google",
+            "--allow-init-docstring=True",
+            *paths,
+        ],
         check=False,
     )
     passed = result.returncode == 0
@@ -204,9 +216,16 @@ def main() -> None:
     parser.add_argument("--format", action="store_true", help="run ruff format --check")
     parser.add_argument("--type", action="store_true", help="run ty check")
     parser.add_argument("--docstring", action="store_true", help="run pydoclint")
-    parser.add_argument("--doctest", action="store_true", help="run pytest --doctest-modules")
+    parser.add_argument(
+        "--doctest", action="store_true", help="run pytest --doctest-modules"
+    )
     parser.add_argument("--test", action="store_true", help="run pytest --cov")
-    parser.add_argument("--all", action="store_true", dest="run_all", help="run all checks (same as no flags)")
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        dest="run_all",
+        help="run all checks (same as no flags)",
+    )
 
     args = parser.parse_args()
 
