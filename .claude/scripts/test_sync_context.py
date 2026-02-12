@@ -188,7 +188,7 @@ class TestParseFrontmatter:
     def test_parse_frontmatter_valid_content_returns_metadata_and_body(self) -> None:
         """Content with valid frontmatter should return parsed dict and remaining body."""
         # Arrange
-        content = "---\nname: my-skill\nversion: 1.0.0\n---\n# Body content"
+        content = "---\nname: my-skill\ndescription: A test skill\n---\n# Body content"
 
         # Act
         frontmatter, body = parse_frontmatter(content)
@@ -197,7 +197,7 @@ class TestParseFrontmatter:
         with check:
             assert frontmatter["name"] == "my-skill"
         with check:
-            assert frontmatter["version"] == "1.0.0"
+            assert frontmatter["description"] == "A test skill"
         with check:
             assert body == "# Body content"
 
@@ -480,7 +480,7 @@ class TestScanSkills:
         # lines like "name: no-desc" are candidates (they don't start with # or -)
         _write_skill(
             tmp_path / "no-desc",
-            "name: no-desc\nversion: 1.0.0",
+            "name: no-desc",
             body="\n# Heading\n\nThis is the fallback description line.",
         )
 
