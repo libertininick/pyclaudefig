@@ -23,6 +23,7 @@ from run_python_safely import (
     BLOCKED_BUILTINS,
     BLOCKED_IMPORTS,
     BLOCKED_METHODS,
+    EXECUTION_TIMEOUT_SECONDS,
     EXIT_TIMEOUT,
     CodeSource,
     FileReadError,
@@ -896,17 +897,55 @@ print(greet())
         assert result.returncode != 0
 
     def test_cli_timeout_with_infinite_loop(self, script_path: Path) -> None:
-        """Test timeout exit code is correctly defined.
+        """Test -t flag with timeout triggers EXIT_TIMEOUT for long-running code.
 
-        A full timeout integration test would require either:
-        1. Making EXECUTION_TIMEOUT_SECONDS configurable
-        2. Using a wrapper script that patches the timeout constant
-        3. Accepting a 5-minute test runtime to actually trigger the timeout
-
-        Instead, we verify the timeout exit code constant is correctly defined,
-        which documents the expected behavior when subprocess.TimeoutExpired is raised.
+        Uses a 1-second timeout with code that sleeps for 10 seconds to verify
+        that the timeout mechanism correctly terminates execution and returns
+        EXIT_TIMEOUT (3).
         """
-        assert EXIT_TIMEOUT == 3
+        # Arrange & Act
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(script_path),
+                "-t",
+                "1",
+                "-c",
+                "import time; time.sleep(10)",
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+        # Assert
+        assert result.returncode == EXIT_TIMEOUT
+        assert "[TIMEOUT]" in result.stderr
+
+    def test_cli_custom_timeout_succeeds(self, script_path: Path) -> None:
+        """Test -t flag with custom timeout allows code to complete successfully.
+
+        Verifies that the timeout flag is accepted and code completes normally
+        when execution finishes before the timeout.
+        """
+        # Arrange & Act
+        result = subprocess.run(
+            [sys.executable, str(script_path), "-t", "10", "-c", "print(1)"],
+            capture_output=True,
+            text=True,
+        )
+
+        # Assert
+        assert result.returncode == 0
+        assert "1" in result.stdout
+
+    def test_cli_default_timeout_matches_constant(self) -> None:
+        """Test that EXECUTION_TIMEOUT_SECONDS constant matches expected default.
+
+        Verifies the default timeout hasn't changed unexpectedly, which would
+        affect all code execution when --timeout is not specified.
+        """
+        # Assert
+        assert EXECUTION_TIMEOUT_SECONDS == 300
 
 
 # ============================================================================
