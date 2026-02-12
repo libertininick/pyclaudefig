@@ -1,6 +1,6 @@
 ---
 name: test-writing
-version: 1.1.0
+version: 1.2.0
 description: Pytest testing conventions for this codebase. Apply when writing or reviewing tests including test naming, structure, fixtures, and parametrization.
 user-invocable: false
 ---
@@ -32,6 +32,12 @@ Pytest conventions for writing maintainable, behavior-focused tests.
 | Fixturized test data | Define test data inline in each test; fixtures are for dependency instances |
 | Fixture duplication | Extend or generalize existing fixtures |
 | Homogeneous test data | Vary data types, include edge values (nulls, dates, large numbers, empty strings) |
+| Excessive mocking | Mocking is a last resort; redesign for testability instead |
+| Mocking internal code | Never mock internal functions, methods, or classes; mock only at external boundaries |
+| MagicMock without spec | Always use `spec=` or `create_autospec()` to catch API mismatches |
+| Mock call assertions | Assert on observable outcomes, not that mocks were called in a specific order |
+| Monkeypatching internal code | `monkeypatch.setattr` is patching -- same rules as `mock.patch`; never use on internal functions/methods |
+| Monkeypatching in integration tests | Only acceptable for untestable mid-process external boundaries; develop realistic inputs instead |
 
 ## Test Organization
 
@@ -336,6 +342,195 @@ class TestDataProcessor:
         with pytest.raises(ValueError, match="exceeds maximum size"):
             processor.load_data(large_data)
 ```
+
+## Mock, Patch & Monkeypatch Discipline
+
+<!-- Canonical source for mock/monkeypatch rules and examples. test-quality/examples.md mirrors a subset — keep in sync. -->
+
+**Mocking, patching, and monkeypatching are last resorts, not conveniences.** Every mock or monkeypatch is a lie -- it replaces real behavior with an assumption about behavior. This applies equally to `unittest.mock.patch`, `MagicMock`, `AsyncMock`, `PropertyMock`, `mocker.patch`, and `monkeypatch.setattr`. When that assumption drifts from reality, your tests pass while your code is broken. The burden of proof is on the developer to justify *why* any of these are necessary.
+
+**Integration tests verify wiring, not components.** Each component should already be comprehensively unit-tested with real inputs and expected outputs. Integration tests then verify that real components compose correctly by running end-to-end with realistic inputs and asserting on final outputs. Mocking in an integration test defeats this purpose -- you're replacing the very thing you're trying to verify. Don't retest the same components with mocks; test the real pipeline.
+
+### When Mocking Is Forbidden
+
+| Forbidden Pattern | Why | What to Do Instead |
+|-------------------|-----|---------------------|
+| Mocking/monkeypatching internal functions/methods in integration tests | Defeats the purpose of integration testing | Use real inputs that exercise real code paths |
+| Mocking pure functions or deterministic logic | Nothing to mock; inputs produce outputs | Use `@pytest.mark.parametrize` with known input/output pairs |
+| Mocking/monkeypatching to avoid writing fixtures | Creates brittle, meaningless tests | Invest in real fixtures (`tmp_path`, factories, test DBs) |
+| Asserting mock call sequences (`assert_called_once_with`) | Tests implementation, not behavior; breaks on every refactor | Assert on observable outcomes (return values, state changes) |
+| `MagicMock()` without `spec=` | Silently accepts typos and incorrect API usage | Always use `spec=RealClass` or `create_autospec()` |
+| Mocking/monkeypatching your own code at internal seams | Replaces the code you should be testing | Mock at external *boundaries*, not internal functions |
+| `monkeypatch.setattr` on internal functions/methods | Identical to `mock.patch` -- replaces real code with fakes | Use real inputs and dependency injection |
+| `monkeypatch.setattr` in integration tests | Only acceptable if patching an untestable mid-process external boundary with no realistic input/output alternative | Develop realistic inputs and expected outputs; redesign for testability |
+
+### When Mocking Is Acceptable
+
+These are the **only** legitimate use cases. Even here, prefer alternatives when they exist.
+
+| Boundary | Acceptable? | Preferred Tool |
+|----------|-------------|----------------|
+| HTTP APIs (external services) | Yes | `respx`, `responses`, VCR cassettes |
+| System clock / time | Yes | `freezegun`, `time-machine` |
+| Environment variables | Yes (only `monkeypatch.setenv` / `monkeypatch.delenv`) | `monkeypatch.setenv` / `monkeypatch.delenv` -- note: `monkeypatch.setattr` and `monkeypatch.delattr` are NOT covered by this exception |
+| Randomness / UUIDs | Acceptable | Seed or inject factory |
+| Filesystem | Rarely | `tmp_path` (real fs) first; mock only for failure simulation |
+| Databases | Depends | Real test DB > in-memory SQLite > mock |
+| Internal functions | **No** | Redesign for testability (DI, pure functions) |
+| CLI main functions | **No** | `CliRunner` (click/typer), `subprocess` (argparse) |
+| Class methods | **No** | Use real instances with test configuration |
+| Error simulation at external boundaries | Yes | `side_effect` to raise exceptions (e.g., `ConnectionError`, `TimeoutError`) on mocked external boundaries; mock must still use `spec=` and target an external boundary |
+| Untestable mid-process boundary (integration tests) | Rare exception | `monkeypatch.setattr` only when no realistic input/output can be constructed and the boundary cannot be redesigned. *Example*: a function calls an external payment gateway mid-pipeline where the gateway has no sandbox mode, cannot run locally, and the call is embedded in a transaction that cannot be decomposed -- patch only that gateway client method |
+
+### Decision Checklist
+
+Before adding **any** mock or `monkeypatch.setattr`, answer these questions.
+
+**Stop -- do not mock if any answer is "yes":**
+
+1. **Can I use a real implementation?** (real DB, real filesystem via `tmp_path`, real parser)
+2. **Can I redesign for testability?** (dependency injection, passing factories, configuration objects)
+3. **Am I mocking to avoid setting up a fixture?** (build the fixture instead)
+4. **Am I mocking my own code?** (mock at *boundaries*, not internal seams)
+
+**Fix before proceeding -- if any answer is "yes", correct the issue first:**
+
+5. **Am I using `MagicMock()` without `spec=`?** (add `spec=` or use `create_autospec()`)
+6. **Is this an integration test?** (mocking internal code is categorically forbidden; only untestable external boundaries are acceptable)
+7. **Am I asserting that mocks were called?** (replace with an observable outcome assertion)
+8. **Am I using `monkeypatch.setattr`?** (this is patching -- same rules as `mock.patch` apply; only acceptable for env vars via `monkeypatch.setenv`/`delenv` or truly untestable external boundaries)
+
+### Examples
+
+```python
+# FORBIDDEN -- mocking internal function in an integration test
+def test_process_pipeline(monkeypatch):
+    monkeypatch.setattr("myapp.pipeline.validate_input", lambda x: True)
+    result = process_pipeline(sample_input)
+    assert result.success
+
+# CORRECT -- use real inputs that exercise real code paths
+def test_process_pipeline():
+    result = process_pipeline(KNOWN_VALID_INPUT)
+    assert result == EXPECTED_OUTPUT
+
+
+# FORBIDDEN -- mocking to avoid fixture work
+def test_report_generation(monkeypatch):
+    mock_db = MagicMock()
+    mock_db.query.return_value = [{"id": 1, "name": "test"}]
+    monkeypatch.setattr("myapp.reports.get_db", lambda: mock_db)
+    report = generate_report()
+    assert "test" in report
+
+# CORRECT -- build real fixtures
+def test_report_generation(populated_db):
+    report = generate_report(db=populated_db)
+    assert report == EXPECTED_REPORT_CONTENT
+
+
+# FORBIDDEN -- asserting mock call sequences
+def test_save_user(monkeypatch):
+    mock_validate = MagicMock(return_value=True)
+    mock_persist = MagicMock()
+    monkeypatch.setattr("myapp.users.validate", mock_validate)
+    monkeypatch.setattr("myapp.users.persist", mock_persist)
+    save_user({"name": "Alice"})
+    mock_validate.assert_called_once_with({"name": "Alice"})
+    mock_persist.assert_called_once()
+
+# CORRECT -- test the observable outcome
+def test_save_user(tmp_storage):
+    save_user({"name": "Alice"}, storage=tmp_storage)
+    assert tmp_storage.get_user("Alice") is not None
+
+
+# ACCEPTABLE -- mocking at the HTTP transport boundary
+def test_fetch_weather(respx_mock):
+    respx_mock.get("https://api.weather.com/v1/current").respond(
+        json={"temp": 72, "unit": "F"}
+    )
+    result = fetch_weather("New York")
+    assert result.temperature == 72
+
+
+# ACCEPTABLE -- freezing time for deterministic tests
+from freezegun import freeze_time
+
+@freeze_time("2025-01-15 10:00:00")
+def test_token_expiry():
+    token = create_token(ttl_seconds=3600)
+    assert token.expires_at == datetime(2025, 1, 15, 11, 0, 0)
+
+
+# FORBIDDEN -- monkeypatch.setattr on internal function for convenience
+def test_process_order(monkeypatch):
+    monkeypatch.setattr("myapp.orders.calculate_tax", lambda x: 0.0)
+    result = process_order(order)  # Replaced real tax calc with a lie!
+    assert result.total == 100.0
+
+# CORRECT -- pass tax rate as a parameter or use real calculation
+def test_process_order():
+    result = process_order(order, tax_rate=0.0)
+    assert result.total == 100.0
+
+
+# FORBIDDEN -- monkeypatch.setattr throughout an integration test
+def test_end_to_end_checkout(monkeypatch):
+    monkeypatch.setattr("myapp.inventory.check_stock", lambda sku: True)
+    monkeypatch.setattr("myapp.pricing.get_price", lambda sku: 10.0)
+    monkeypatch.setattr("myapp.shipping.calculate", lambda w: 5.0)
+    result = checkout(cart)  # Nothing real is being tested!
+    assert result.success
+
+# CORRECT -- use realistic inputs and test the real pipeline
+def test_end_to_end_checkout(seeded_db):
+    cart = Cart(items=[CartItem(sku="WIDGET-001", quantity=2)])
+    result = checkout(cart, db=seeded_db)
+    assert result.success
+    assert result.total == 25.0  # 2 * $10 + $5 shipping
+
+
+# ACCEPTABLE -- monkeypatch.setenv for environment variables
+def test_reads_api_key_from_env(monkeypatch):
+    monkeypatch.setenv("API_KEY", "test-key-123")
+    config = load_config()
+    assert config.api_key == "test-key-123"
+```
+
+### CLI Testing
+
+Use the framework's built-in test runner instead of mocking CLI internals.
+
+```python
+# CORRECT -- click/typer CliRunner
+from click.testing import CliRunner
+
+def test_cli_convert():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("input.csv").write_text("a,b\n1,2\n")
+        result = runner.invoke(cli, ["convert", "input.csv", "--format", "json"])
+        assert result.exit_code == 0
+
+# CORRECT -- argparse via subprocess
+import subprocess
+
+def test_cli_version():
+    result = subprocess.run(
+        ["python", "-m", "myapp", "--version"],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0
+    assert "1.0.0" in result.stdout
+```
+
+| Test This (CLI) | Not This |
+|-----------------|----------|
+| Exit codes for success, error, bad input | Whether `argparse.parse_args` was called |
+| Stdout/stderr content | Whether `print()` was called with specific args |
+| Files created/modified on disk | Whether `open()` was called |
+| Behavior with real config files via `tmp_path` | Mocked config loaders |
 
 ## Coverage Requirements
 

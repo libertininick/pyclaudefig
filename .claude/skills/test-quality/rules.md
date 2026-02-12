@@ -12,7 +12,7 @@ Evaluate whether tests verify true functionality and provide meaningful coverage
 | Edge case coverage | Are error paths and boundaries tested? | Critical/Improvement |
 | Test data variety | Is data varied or repetitive? | Improvement |
 | Fixture usage | Are fixtures reducing duplication without tight coupling? | Improvement |
-| Mock discipline | Are mocks used only when necessary? | Improvement/Critical |
+| Mock & monkeypatch discipline | Is every mock and monkeypatch.setattr a justified last resort at external boundaries only? | Critical |
 | Tests run | Do tests actually pass without errors? | Critical |
 
 ---
@@ -117,20 +117,28 @@ Evaluate whether tests verify true functionality and provide meaningful coverage
 
 ---
 
-## 7. Mock Discipline
+## 7. Mock & Monkeypatch Discipline
 
-**Rule**: Mock only what you must. Prefer real objects and fakes over mocks.
+**Rule**: Mocking and monkeypatching are last resorts, not conveniences. Every mock or `monkeypatch.setattr` call is a lie -- it replaces real behavior with an assumption. This applies equally to `MagicMock`, `AsyncMock`, `PropertyMock`, `mocker.patch`, `mock.patch`, and `monkeypatch.setattr`. The burden of proof is on the developer to justify why any of these are necessary.
 
 | Flag as | Condition |
 |---------|-----------|
 | **Critical** | Mocking the unit under test itself |
 | **Critical** | Mock configured incorrectly (returns wrong type, missing methods) |
-| **Improvement** | Mocking when a real object would work fine |
-| **Improvement** | More than 3 mocks in a single test (indicates design smell) |
+| **Critical** | Mocking/monkeypatching internal functions, methods, or classes instead of external boundaries |
+| **Critical** | Using `MagicMock()` without `spec=` or `create_autospec()` |
+| **Critical** | Mocking/monkeypatching to avoid writing fixtures (lazy patching) |
+| **Critical** | Asserting mock call sequences instead of observable outcomes |
+| **Critical** | Mocking/monkeypatching when a real object would work fine |
+| **Critical** | 3 or more mocks/monkeypatches in a single test (design failure -- refactor first) |
+| **Critical** | Using `monkeypatch.setattr` on internal functions, methods, or modules |
+| **Critical** | Using `monkeypatch.setattr` in integration tests (unless patching an untestable mid-process external boundary) |
+| **Improvement** | Mocking/monkeypatching at code layer instead of transport/boundary layer |
 | **Improvement** | Mocking standard library functions unnecessarily |
+| **Improvement** | Missing decision checklist justification for mock/monkeypatch usage |
 | **Nitpick** | Mock assertions on call order when order doesn't matter |
 
-**Ask**: "Do I really need to mock this, or could I use the real thing?"
+**Ask**: "Can I redesign for testability or use a real implementation instead? Is this mock or monkeypatch at an external boundary? Can I develop a realistic input/output instead of patching?"
 
 ---
 
@@ -161,5 +169,5 @@ When reviewing a test file, check each category:
 4. **Complete?** - Are edge cases and error paths covered?
 5. **Varied?** - Is test data realistic and not repetitive?
 6. **Clean fixtures?** - Are fixtures helping or hurting?
-7. **Minimal mocks?** - Are mocks truly necessary?
+7. **Last-resort mocks/monkeypatches?** - Is every mock and `monkeypatch.setattr` justified, at an external boundary, and using `spec=` where applicable?
 8. **Running?** - Do tests pass without errors or warnings?

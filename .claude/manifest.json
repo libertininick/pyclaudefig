@@ -126,21 +126,21 @@
       "category": "assessment",
       "description": "Test quality assessment for reviewing tests",
       "user_invocable": false,
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "name": "test-writing",
       "category": "conventions",
-      "description": "Pytest conventions, fixtures, parametrization",
+      "description": "Pytest conventions, fixtures, parametrization, mock discipline",
       "user_invocable": false,
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     {
       "name": "testability",
       "category": "assessment",
-      "description": "Dependency injection, global state, pure functions",
+      "description": "Dependency injection, global state, pure functions, mock avoidance",
       "user_invocable": false,
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     {
       "name": "type-hints",
@@ -277,7 +277,7 @@
       "name": "python-test-writer",
       "description": "Writes tests",
       "model": "sonnet",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "depends_on_skills": [
         "test-writing",
         "frameworks",
@@ -292,7 +292,7 @@
       "name": "test-reviewer",
       "description": "Reviews test quality and coverage",
       "model": "opus",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "depends_on_skills": [
         "test-quality",
         "test-writing",

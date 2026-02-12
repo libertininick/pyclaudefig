@@ -1,6 +1,6 @@
 ---
 name: python-test-writer
-version: 1.2.0
+version: 1.3.0
 description: Creates comprehensive pytest test suites. Use when writing tests for new functions/classes, updating tests after logic changes, or creating edge case coverage.
 model: sonnet
 color: red
@@ -38,6 +38,7 @@ The bundle contains: testing, frameworks, naming-conventions, docstring-conventi
 4. **Review existing tests first** - reuse and extend before creating new
 5. **Always run tests after writing** - verify they pass
 6. **Fetch docs when uncertain** - use `fetch-docs` skill for framework API details
+7. **Mock & monkeypatch discipline** - Mocking and monkeypatching are last resorts. Never mock or `monkeypatch.setattr` internal code. Only use at external boundaries (HTTP, clock, env vars via `monkeypatch.setenv`). Always use `spec=` with MagicMock. Run the decision checklist from `test-writing` skill before adding any mock or `monkeypatch.setattr`.
 
 ## Workflow
 
@@ -57,6 +58,10 @@ The bundle contains: testing, frameworks, naming-conventions, docstring-conventi
 - [ ] Test names follow pattern: `test_<function>_<scenario>_<expected>`
 - [ ] Tests have docstrings explaining intent
 - [ ] Uses `pytest-check` for multiple assertions
+- [ ] No mocks or `monkeypatch.setattr` targeting internal functions/methods/classes
+- [ ] No `monkeypatch.setattr` in integration tests (unless patching untestable external boundary)
+- [ ] Any MagicMock uses `spec=` or `create_autospec()`
+- [ ] Mock/monkeypatch decision checklist passed for every mock or `monkeypatch.setattr` used
 - [ ] All tests pass
 
 ## Running Tests

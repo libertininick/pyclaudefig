@@ -388,7 +388,11 @@ def test_user_full_name():
 
 ---
 
-## 7. Mock Discipline
+## 7. Mock & Monkeypatch Discipline
+
+<!-- Canonical mock/monkeypatch examples live in test-writing/SKILL.md. Keep these in sync. -->
+
+Mocking and monkeypatching are last resorts. Every mock or `monkeypatch.setattr` replaces real behavior with an assumption that can drift from reality. This applies equally to `MagicMock`, `AsyncMock`, `PropertyMock`, `mocker.patch`, `mock.patch`, and `monkeypatch.setattr`. See `test-writing`: Mock, Patch & Monkeypatch Discipline for the full decision checklist.
 
 ```python
 # INCORRECT - mocking the unit under test
@@ -398,14 +402,14 @@ def test_calculator(mocker):
     assert calc.add(2, 3) == 5  # This tests nothing
 
 
-# INCORRECT - excessive mocking
+# INCORRECT - excessive mocking (design failure)
 def test_process_order(mocker):
     mock_db = mocker.Mock()
     mock_email = mocker.Mock()
     mock_payment = mocker.Mock()
     mock_inventory = mocker.Mock()
     mock_shipping = mocker.Mock()
-    mock_analytics = mocker.Mock()  # 6 mocks = design smell
+    mock_analytics = mocker.Mock()  # 6 mocks = design failure, refactor first
 
     processor = OrderProcessor(
         mock_db, mock_email, mock_payment,
@@ -423,7 +427,64 @@ def test_string_processing(mocker):
     assert result == "HELLO"
 
 
-# CORRECT - mock only external dependencies
+# INCORRECT - mocking internal function in integration test
+def test_process_pipeline(monkeypatch):
+    monkeypatch.setattr("myapp.pipeline.validate_input", lambda x: True)
+    result = process_pipeline(sample_input)  # Defeats integration test purpose!
+    assert result.success
+
+# CORRECT - use real inputs in integration tests
+def test_process_pipeline():
+    result = process_pipeline(KNOWN_VALID_INPUT)
+    assert result == EXPECTED_OUTPUT
+
+
+# INCORRECT - mocking to avoid writing fixtures
+def test_report_generation(monkeypatch):
+    mock_db = MagicMock()
+    mock_db.query.return_value = [{"id": 1, "name": "test"}]
+    monkeypatch.setattr("myapp.reports.get_db", lambda: mock_db)
+    report = generate_report()
+    assert "test" in report
+
+# CORRECT - build real fixtures instead
+def test_report_generation(populated_db):
+    report = generate_report(db=populated_db)
+    assert report == EXPECTED_REPORT_CONTENT
+
+
+# INCORRECT - asserting mock call sequences (tests implementation, not behavior)
+def test_save_user(monkeypatch):
+    mock_validate = MagicMock(return_value=True)
+    mock_persist = MagicMock()
+    monkeypatch.setattr("myapp.users.validate", mock_validate)
+    monkeypatch.setattr("myapp.users.persist", mock_persist)
+    save_user({"name": "Alice"})
+    mock_validate.assert_called_once_with({"name": "Alice"})  # Implementation!
+    mock_persist.assert_called_once()  # Implementation!
+
+# CORRECT - test observable outcome
+def test_save_user(tmp_storage):
+    save_user({"name": "Alice"}, storage=tmp_storage)
+    assert tmp_storage.get_user("Alice") is not None
+
+
+# INCORRECT - MagicMock without spec (hides bugs)
+def test_processor():
+    client = MagicMock()  # No spec= ! Typos will pass silently
+    processor = DataProcessor(client)
+    processor.run()
+    client.send_batch.assert_called_once()  # Won't catch client.send_batchh() typo
+
+# CORRECT - always use spec= with MagicMock
+def test_processor():
+    client = MagicMock(spec=RealClient)  # Will raise on API mismatches
+    processor = DataProcessor(client)
+    processor.run()
+    client.send_batch.assert_called_once()
+
+
+# CORRECT - mock only external dependencies via fakes
 def test_send_notification():
     """Notification should be sent via email service."""
     # Arrange
@@ -453,6 +514,68 @@ def test_json_serialization():
         assert parsed["customer"] == "alice@example.com"
     with check:
         assert parsed["total"] == 99.99
+
+
+# CORRECT - mock at HTTP transport boundary (acceptable)
+def test_fetch_weather(respx_mock):
+    respx_mock.get("https://api.weather.com/v1/current").respond(
+        json={"temp": 72, "unit": "F"}
+    )
+    result = fetch_weather("New York")
+    assert result.temperature == 72
+
+
+# CORRECT - use real filesystem via tmp_path
+def test_write_config(tmp_path):
+    config_file = tmp_path / "config.toml"
+    write_config({"key": "value"}, path=config_file)
+    assert config_file.read_text() == 'key = "value"\n'
+
+
+# CORRECT - CLI testing with CliRunner (no mocking)
+from click.testing import CliRunner
+
+def test_cli_convert():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("input.csv").write_text("a,b\n1,2\n")
+        result = runner.invoke(cli, ["convert", "input.csv", "--format", "json"])
+        assert result.exit_code == 0
+
+
+# INCORRECT - monkeypatch.setattr on internal function for convenience
+def test_process_order(monkeypatch):
+    monkeypatch.setattr("myapp.orders.calculate_tax", lambda x: 0.0)
+    result = process_order(order)  # Replaced real tax calc with a lie!
+    assert result.total == 100.0
+
+# CORRECT - pass tax rate as a parameter or use real calculation
+def test_process_order():
+    result = process_order(order, tax_rate=0.0)
+    assert result.total == 100.0
+
+
+# INCORRECT - monkeypatch.setattr throughout integration test
+def test_end_to_end_checkout(monkeypatch):
+    monkeypatch.setattr("myapp.inventory.check_stock", lambda sku: True)
+    monkeypatch.setattr("myapp.pricing.get_price", lambda sku: 10.0)
+    monkeypatch.setattr("myapp.shipping.calculate", lambda w: 5.0)
+    result = checkout(cart)  # Nothing real is being tested!
+    assert result.success
+
+# CORRECT - use realistic inputs and test the real pipeline
+def test_end_to_end_checkout(seeded_db):
+    cart = Cart(items=[CartItem(sku="WIDGET-001", quantity=2)])
+    result = checkout(cart, db=seeded_db)
+    assert result.success
+    assert result.total == 25.0
+
+
+# CORRECT - monkeypatch.setenv for environment variables (acceptable)
+def test_reads_api_key_from_env(monkeypatch):
+    monkeypatch.setenv("API_KEY", "test-key-123")
+    config = load_config()
+    assert config.api_key == "test-key-123"
 ```
 
 ---
