@@ -13,14 +13,17 @@ Evaluate whether code can be effectively unit tested in isolation.
 | File system | Can it be abstracted? | Medium |
 | Seams | Can behavior be substituted? | Medium-High |
 | Observability | Can you assert on outputs? | Medium |
+| Mock avoidance | Does the design eliminate the need for mocking? | High |
 
 ## Quick Heuristic
 
 If testing a function requires:
 - **0 mocks**: Excellent testability (pure function)
-- **1-2 mocks**: Good testability (clear dependencies)
-- **3-5 mocks**: Concerning (might need refactoring)
-- **6+ mocks**: Likely design problem (too many responsibilities)
+- **1-2 mocks**: Acceptable (clear external boundaries only)
+- **3-5 mocks**: Redesign required (too many responsibilities or mocking internal code)
+- **6+ mocks**: Design failure (refactor before writing tests)
+
+If any mock or `monkeypatch.setattr` targets internal functions, methods, or classes rather than external boundaries, the count is irrelevant -- redesign for testability instead.
 
 ---
 
@@ -102,3 +105,19 @@ A **seam** is a place where you can alter behavior without editing the code.
 |---------|-----------|
 | **Medium** | Testing requires verifying mock interactions instead of outputs |
 | **Low** | Outputs exist but could be richer |
+
+---
+
+## Mock & Monkeypatch Avoidance
+
+**Rule**: Code should be designed so tests rarely need mocks or monkeypatching. If testing requires mocking internal code or using `monkeypatch.setattr` on internal functions, the design is the problem -- not the test.
+
+| Flag as | Condition |
+|---------|-----------|
+| **High** | Testing requires mocking internal functions or methods |
+| **High** | Testing requires `monkeypatch.setattr` on internal functions or methods |
+| **High** | Testing requires more than 3 mocks or monkeypatches |
+| **Medium** | Testing requires mocking/monkeypatching at code layer instead of transport boundary |
+| **Low** | Testing uses `monkeypatch.setenv` for env vars (acceptable) |
+
+**Ask**: "Can this code be tested without any mocks or `monkeypatch.setattr` calls? If not, what design change would make that possible?"

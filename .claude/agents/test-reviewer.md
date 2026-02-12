@@ -1,6 +1,6 @@
 ---
 name: test-reviewer
-version: 1.2.0
+version: 1.3.0
 description: Reviews test suites for quality, coverage completeness, organization, and realistic test data variety.
 model: opus
 color: cyan
@@ -43,8 +43,8 @@ Use `review-template` skill for severity definitions:
 
 | Level | Test Quality Examples |
 |-------|----------------------|
-| **Critical** | Tests with no meaningful assertions (rubber stamps), tests that don't run, mocking the unit under test |
-| **Improvement** | Missing edge case tests, excessive mocking, single-use fixtures, repetitive test data |
+| **Critical** | Tests with no meaningful assertions (rubber stamps), tests that don't run, mocking the unit under test, mocking/monkeypatching internal functions/methods/classes, `MagicMock` without `spec=`, mocking/monkeypatching to avoid writing fixtures, asserting mock call sequences instead of observable outcomes, `monkeypatch.setattr` on internal code, `monkeypatch.setattr` in integration tests |
+| **Improvement** | Missing edge case tests, mocking/monkeypatching at code layer instead of transport boundary, mock or `monkeypatch.setattr` used without justification that no realistic input/output alternative exists, single-use fixtures, repetitive test data |
 | **Nitpick** | Test naming preferences, missing docstrings on test classes |
 
 ## Output
