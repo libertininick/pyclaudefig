@@ -63,13 +63,18 @@ class SkillContent:
         return bool(self.layers)
 
 
-def load_manifest() -> dict[str, Any]:
+def load_manifest(*, manifest_path: Path | None = None) -> dict[str, Any]:
     """Load the manifest.json file.
+
+    Args:
+        manifest_path (Path | None): Path to the manifest.json file.
 
     Returns:
         dict[str, Any]: The parsed manifest data.
     """
-    with MANIFEST_PATH.open() as f:
+    if manifest_path is None:
+        manifest_path = MANIFEST_PATH
+    with manifest_path.open() as f:
         return json.load(f)
 
 
@@ -84,7 +89,10 @@ def _parse_frontmatter(content: str) -> dict[str, Any]:
     """
     if match := FRONTMATTER_PATTERN.match(content):
         yaml_content = match.group(1)
-        return yaml.safe_load(yaml_content) or {}
+        parsed = yaml.safe_load(yaml_content)
+        if not isinstance(parsed, dict):
+            return {}
+        return parsed
     return {}
 
 
@@ -120,16 +128,21 @@ def _load_layer_files(skill_dir: Path, layers_config: dict[str, str]) -> dict[st
     return layers
 
 
-def load_skill_content(skill_name: str) -> SkillContent | None:
+def load_skill_content(
+    skill_name: str, *, skills_dir: Path | None = None
+) -> SkillContent | None:
     """Load the content of a skill including any layers.
 
     Args:
         skill_name (str): Name of the skill directory.
+        skills_dir (Path | None): Path to the skills directory.
 
     Returns:
         SkillContent | None: The skill content with layers, or None if not found.
     """
-    skill_dir = SKILLS_DIR / skill_name
+    if skills_dir is None:
+        skills_dir = SKILLS_DIR
+    skill_dir = skills_dir / skill_name
     skill_path = skill_dir / "SKILL.md"
     if not skill_path.exists():
         print(f"  Warning: Skill not found: {skill_name}")
@@ -294,6 +307,7 @@ def generate_bundle(
     skills_lookup: Mapping[str, Mapping[str, Any]],
     *,
     compact: bool = False,
+    skills_dir: Path | None = None,
 ) -> str:
     """Generate a context bundle for an agent.
 
@@ -302,17 +316,20 @@ def generate_bundle(
         agent_config (Mapping[str, Any]): Agent configuration from manifest.
         skills_lookup (Mapping[str, Mapping[str, Any]]): Skill name to config mapping.
         compact (bool): If True, only include Quick Reference sections.
+        skills_dir (Path | None): Path to the skills directory.
 
     Returns:
         str: The generated bundle content.
     """
+    if skills_dir is None:
+        skills_dir = SKILLS_DIR
     dependencies: list[str] = agent_config.get("depends_on_skills", [])
     timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Load skills first to filter missing ones from both TOC and content
     loaded_skills: dict[str, SkillContent] = {}
     for skill_name in dependencies:
-        skill = load_skill_content(skill_name)
+        skill = load_skill_content(skill_name, skills_dir=skills_dir)
         if skill is not None:
             loaded_skills[skill_name] = skill
 
@@ -339,15 +356,18 @@ def _build_skills_lookup(manifest: Mapping[str, Any]) -> dict[str, dict[str, Any
     return {skill["name"]: skill for skill in manifest.get("skills", [])}
 
 
-def _write_bundle(path: Path, content: str) -> None:
+def _write_bundle(path: Path, content: str, *, claude_dir: Path | None = None) -> None:
     """Write bundle content to file and print status.
 
     Args:
         path (Path): Path to write the bundle file.
         content (str): Bundle content to write.
+        claude_dir (Path | None): Path to the .claude directory.
     """
+    if claude_dir is None:
+        claude_dir = CLAUDE_DIR
     path.write_text(content, encoding="utf-8")
-    print(f"  Wrote: {path.relative_to(CLAUDE_DIR)}")
+    print(f"  Wrote: {path.relative_to(claude_dir)}")
 
 
 def _process_agent(
@@ -355,6 +375,9 @@ def _process_agent(
     skills_lookup: Mapping[str, Mapping[str, Any]],
     *,
     dry_run: bool,
+    skills_dir: Path | None = None,
+    bundles_dir: Path | None = None,
+    claude_dir: Path | None = None,
 ) -> None:
     """Generate and write bundles for a single agent.
 
@@ -362,7 +385,16 @@ def _process_agent(
         agent_config (Mapping[str, Any]): Agent configuration from manifest.
         skills_lookup (Mapping[str, Mapping[str, Any]]): Skill name to config mapping.
         dry_run (bool): If True, print what would be generated without writing.
+        skills_dir (Path | None): Path to the skills directory.
+        bundles_dir (Path | None): Path to the bundles directory.
+        claude_dir (Path | None): Path to the .claude directory.
     """
+    if skills_dir is None:
+        skills_dir = SKILLS_DIR
+    if bundles_dir is None:
+        bundles_dir = BUNDLES_DIR
+    if claude_dir is None:
+        claude_dir = CLAUDE_DIR
     agent_name: str = agent_config["name"]
     dependencies: list[str] = agent_config.get("depends_on_skills", [])
 
@@ -370,10 +402,10 @@ def _process_agent(
     print(f"  Dependencies: {len(dependencies)} skills")
 
     full_content = generate_bundle(
-        agent_name, agent_config, skills_lookup, compact=False
+        agent_name, agent_config, skills_lookup, compact=False, skills_dir=skills_dir
     )
     compact_content = generate_bundle(
-        agent_name, agent_config, skills_lookup, compact=True
+        agent_name, agent_config, skills_lookup, compact=True, skills_dir=skills_dir
     )
 
     if dry_run:
@@ -383,34 +415,64 @@ def _process_agent(
         )
         return
 
-    _write_bundle(BUNDLES_DIR / f"{agent_name}.md", full_content)
-    _write_bundle(BUNDLES_DIR / f"{agent_name}-compact.md", compact_content)
+    _write_bundle(bundles_dir / f"{agent_name}.md", full_content, claude_dir=claude_dir)
+    _write_bundle(
+        bundles_dir / f"{agent_name}-compact.md", compact_content, claude_dir=claude_dir
+    )
 
 
 def generate_all_bundles(
-    *, dry_run: bool = False, agent_filter: str | None = None
+    *,
+    dry_run: bool = False,
+    agent_filter: str | None = None,
+    manifest_path: Path | None = None,
+    skills_dir: Path | None = None,
+    bundles_dir: Path | None = None,
+    claude_dir: Path | None = None,
 ) -> None:
     """Generate bundles for all agents in the manifest.
 
     Args:
         dry_run (bool): If True, print what would be generated without writing.
         agent_filter (str | None): If provided, only generate bundle for this agent.
+        manifest_path (Path | None): Path to the manifest.json file.
+        skills_dir (Path | None): Path to the skills directory.
+        bundles_dir (Path | None): Path to the bundles directory.
+        claude_dir (Path | None): Path to the .claude directory.
     """
-    manifest = load_manifest()
+    if manifest_path is None:
+        manifest_path = MANIFEST_PATH
+    if skills_dir is None:
+        skills_dir = SKILLS_DIR
+    if bundles_dir is None:
+        bundles_dir = BUNDLES_DIR
+    if claude_dir is None:
+        claude_dir = CLAUDE_DIR
+    manifest = load_manifest(manifest_path=manifest_path)
     skills_lookup = _build_skills_lookup(manifest)
 
     if not dry_run:
-        BUNDLES_DIR.mkdir(exist_ok=True)
+        bundles_dir.mkdir(exist_ok=True)
 
     for agent_config in manifest.get("agents", []):
         agent_name = agent_config["name"]
         if agent_filter and agent_name != agent_filter:
             continue
-        _process_agent(agent_config, skills_lookup, dry_run=dry_run)
+        _process_agent(
+            agent_config,
+            skills_lookup,
+            dry_run=dry_run,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=claude_dir,
+        )
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments.
+
+    Args:
+        argv (list[str] | None): Command-line arguments to parse. If None, uses sys.argv.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments.
@@ -428,13 +490,35 @@ def _parse_args() -> argparse.Namespace:
         type=str,
         help="Generate bundle for a specific agent only.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> None:
-    """Entry point for the bundle generator script."""
-    args = _parse_args()
-    generate_all_bundles(dry_run=args.dry_run, agent_filter=args.agent)
+def main(
+    argv: list[str] | None = None,
+    *,
+    manifest_path: Path | None = None,
+    skills_dir: Path | None = None,
+    bundles_dir: Path | None = None,
+    claude_dir: Path | None = None,
+) -> None:
+    """Entry point for the bundle generator script.
+
+    Args:
+        argv (list[str] | None): Command-line arguments to parse. If None, uses sys.argv.
+        manifest_path (Path | None): Path to the manifest.json file.
+        skills_dir (Path | None): Path to the skills directory.
+        bundles_dir (Path | None): Path to the bundles directory.
+        claude_dir (Path | None): Path to the .claude directory.
+    """
+    args = _parse_args(argv)
+    generate_all_bundles(
+        dry_run=args.dry_run,
+        agent_filter=args.agent,
+        manifest_path=manifest_path,
+        skills_dir=skills_dir,
+        bundles_dir=bundles_dir,
+        claude_dir=claude_dir,
+    )
 
 
 if __name__ == "__main__":

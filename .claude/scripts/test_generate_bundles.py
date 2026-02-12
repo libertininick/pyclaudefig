@@ -5,14 +5,13 @@ all public and private functions including the SkillContent dataclass,
 frontmatter parsing, layer loading, bundle generation, and CLI argument parsing.
 """
 
-# ruff: noqa: PLR6301, S101 # this is a test module
+# ruff: noqa: PLR6301, S101 # This is a test module
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
 
 import generate_bundles
 import pytest
@@ -152,8 +151,7 @@ class TestLoadManifest:
             manifest_file (Path): Temporary manifest file fixture.
         """
         # Act
-        with patch.object(generate_bundles, "MANIFEST_PATH", manifest_file):
-            result = generate_bundles.load_manifest()
+        result = generate_bundles.load_manifest(manifest_path=manifest_file)
 
         # Assert
         with check:
@@ -173,11 +171,8 @@ class TestLoadManifest:
         missing_path = tmp_path / "nonexistent" / "manifest.json"
 
         # Act / Assert
-        with (
-            patch.object(generate_bundles, "MANIFEST_PATH", missing_path),
-            pytest.raises(FileNotFoundError),
-        ):
-            generate_bundles.load_manifest()
+        with pytest.raises(FileNotFoundError):
+            generate_bundles.load_manifest(manifest_path=missing_path)
 
     def test_load_manifest_invalid_json_raises_decode_error(
         self, tmp_path: Path
@@ -192,11 +187,8 @@ class TestLoadManifest:
         bad_manifest.write_text("{ invalid json }")
 
         # Act / Assert
-        with (
-            patch.object(generate_bundles, "MANIFEST_PATH", bad_manifest),
-            pytest.raises(json.JSONDecodeError),
-        ):
-            generate_bundles.load_manifest()
+        with pytest.raises(json.JSONDecodeError):
+            generate_bundles.load_manifest(manifest_path=bad_manifest)
 
 
 # ============================================================================
@@ -270,7 +262,7 @@ class TestParseFrontmatter:
         # Assert
         assert frontmatter == {}
 
-    def test_parse_frontmatter_with_empty_frontmatter_returns_empty_dict(self) -> None:
+    def test_parse_frontmatter_empty_yaml_block_returns_empty_dict(self) -> None:
         """Content with empty frontmatter block should return empty dict."""
         # Arrange
         content = "---\n\n---\n# Title\n"
@@ -289,6 +281,17 @@ class TestParseFrontmatter:
         # Act / Assert
         with pytest.raises(yaml.YAMLError):
             generate_bundles._parse_frontmatter(content)
+
+    def test_parse_frontmatter_non_dict_yaml_returns_empty_dict(self) -> None:
+        """Non-dict YAML in frontmatter should return empty dict."""
+        # Arrange
+        content = "---\nhello world\n---\n# Title\n"
+
+        # Act
+        frontmatter = generate_bundles._parse_frontmatter(content)
+
+        # Assert
+        assert frontmatter == {}
 
 
 # ============================================================================
@@ -341,6 +344,17 @@ class TestRemoveFrontmatter:
             assert "---" in cleaned
         with check:
             assert "Body after rule." in cleaned
+
+    def test_remove_frontmatter_unclosed_block_returns_unchanged(self) -> None:
+        """Unclosed frontmatter block should return content unchanged."""
+        # Arrange
+        content = "---\nlayers:\n  rules: rules.md\n# Title\n\nBody.\n"
+
+        # Act
+        cleaned = generate_bundles._remove_frontmatter(content)
+
+        # Assert
+        assert cleaned == content
 
 
 # ============================================================================
@@ -431,8 +445,7 @@ class TestLoadSkillContent:
             skills_dir (Path): Temporary skills directory fixture.
         """
         # Act
-        with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            skill = generate_bundles.load_skill_content("test-skill")
+        skill = generate_bundles.load_skill_content("test-skill", skills_dir=skills_dir)
 
         # Assert
         assert skill is not None
@@ -454,8 +467,9 @@ class TestLoadSkillContent:
             skills_dir (Path): Temporary skills directory fixture.
         """
         # Act
-        with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            skill = generate_bundles.load_skill_content("simple-skill")
+        skill = generate_bundles.load_skill_content(
+            "simple-skill", skills_dir=skills_dir
+        )
 
         # Assert
         assert skill is not None
@@ -475,8 +489,9 @@ class TestLoadSkillContent:
             skills_dir (Path): Temporary skills directory fixture.
         """
         # Act
-        with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            skill = generate_bundles.load_skill_content("nonexistent-skill")
+        skill = generate_bundles.load_skill_content(
+            "nonexistent-skill", skills_dir=skills_dir
+        )
 
         # Assert
         assert skill is None
@@ -710,7 +725,7 @@ class TestBuildTableOfContents:
         with check:
             assert "**skill-b**: Second skill" in joined
 
-    def test_build_table_of_contents_missing_skill_in_lookup_uses_empty_description(
+    def test_build_toc_missing_skill_uses_empty_description(
         self,
     ) -> None:
         """Skill not in lookup should use empty description string."""
@@ -851,10 +866,13 @@ class TestGenerateBundle:
         }
 
         # Act
-        with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            bundle = generate_bundles.generate_bundle(
-                "test-agent", agent_config, skills_lookup, compact=False
-            )
+        bundle = generate_bundles.generate_bundle(
+            "test-agent",
+            agent_config,
+            skills_lookup,
+            compact=False,
+            skills_dir=skills_dir,
+        )
 
         # Assert
         with check:
@@ -888,10 +906,13 @@ class TestGenerateBundle:
         }
 
         # Act
-        with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            bundle = generate_bundles.generate_bundle(
-                "test-agent", agent_config, skills_lookup, compact=True
-            )
+        bundle = generate_bundles.generate_bundle(
+            "test-agent",
+            agent_config,
+            skills_lookup,
+            compact=True,
+            skills_dir=skills_dir,
+        )
 
         # Assert
         with check:
@@ -920,10 +941,13 @@ class TestGenerateBundle:
         }
 
         # Act
-        with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            bundle = generate_bundles.generate_bundle(
-                "test-agent", agent_config, skills_lookup, compact=False
-            )
+        bundle = generate_bundles.generate_bundle(
+            "test-agent",
+            agent_config,
+            skills_lookup,
+            compact=False,
+            skills_dir=skills_dir,
+        )
 
         # Assert - missing skill excluded from entire bundle (TOC and content)
         with check:
@@ -1010,8 +1034,7 @@ class TestWriteBundle:
         content = "# Test Bundle\n\nContent here.\n"
 
         # Act
-        with patch.object(generate_bundles, "CLAUDE_DIR", tmp_path):
-            generate_bundles._write_bundle(bundle_path, content)
+        generate_bundles._write_bundle(bundle_path, content, claude_dir=tmp_path)
 
         # Assert
         with check:
@@ -1034,8 +1057,7 @@ class TestWriteBundle:
         content = "# Bundle\n"
 
         # Act
-        with patch.object(generate_bundles, "CLAUDE_DIR", tmp_path):
-            generate_bundles._write_bundle(bundle_path, content)
+        generate_bundles._write_bundle(bundle_path, content, claude_dir=tmp_path)
 
         # Assert
         captured = capsys.readouterr()
@@ -1073,11 +1095,13 @@ class TestProcessAgent:
         }
 
         # Act
-        with (
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-        ):
-            generate_bundles._process_agent(agent_config, skills_lookup, dry_run=True)
+        generate_bundles._process_agent(
+            agent_config,
+            skills_lookup,
+            dry_run=True,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+        )
 
         # Assert
         captured = capsys.readouterr()
@@ -1109,12 +1133,14 @@ class TestProcessAgent:
         }
 
         # Act
-        with (
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles._process_agent(agent_config, skills_lookup, dry_run=False)
+        generate_bundles._process_agent(
+            agent_config,
+            skills_lookup,
+            dry_run=False,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert
         with check:
@@ -1128,6 +1154,10 @@ class TestProcessAgent:
             assert "# test-agent Context Bundle" in full_content
         with check:
             assert "# test-agent Context Bundle" in compact_content
+        with check:
+            assert "<!-- skill: simple-skill -->" in full_content
+        with check:
+            assert "<!-- skill: simple-skill -->" not in compact_content
 
 
 # ============================================================================
@@ -1152,21 +1182,22 @@ class TestGenerateAllBundles:
             manifest_file (Path): Temporary manifest file fixture.
         """
         # Act
-        with (
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "MANIFEST_PATH", manifest_file),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles.generate_all_bundles(
-                dry_run=False, agent_filter="test-agent"
-            )
+        generate_bundles.generate_all_bundles(
+            dry_run=False,
+            agent_filter="test-agent",
+            manifest_path=manifest_file,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert
         with check:
             assert (bundles_dir / "test-agent.md").exists()
         with check:
             assert (bundles_dir / "test-agent-compact.md").exists()
+        with check:
+            assert not (bundles_dir / "other-agent.md").exists()
 
     def test_generate_all_bundles_filter_nonexistent_agent_writes_nothing(
         self,
@@ -1182,15 +1213,14 @@ class TestGenerateAllBundles:
             manifest_file (Path): Temporary manifest file fixture.
         """
         # Act
-        with (
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "MANIFEST_PATH", manifest_file),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles.generate_all_bundles(
-                dry_run=False, agent_filter="nonexistent-agent"
-            )
+        generate_bundles.generate_all_bundles(
+            dry_run=False,
+            agent_filter="nonexistent-agent",
+            manifest_path=manifest_file,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert - only the pre-existing bundles dir, no new files
         bundle_files = list(bundles_dir.glob("*.md"))
@@ -1210,13 +1240,14 @@ class TestGenerateAllBundles:
             manifest_file (Path): Temporary manifest file fixture.
         """
         # Act
-        with (
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "MANIFEST_PATH", manifest_file),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles.generate_all_bundles(dry_run=True, agent_filter=None)
+        generate_bundles.generate_all_bundles(
+            dry_run=True,
+            agent_filter=None,
+            manifest_path=manifest_file,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert
         bundle_files = list(bundles_dir.glob("*.md"))
@@ -1245,13 +1276,14 @@ class TestGenerateAllBundles:
         manifest_path.write_text(json.dumps(manifest))
 
         # Act
-        with (
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "MANIFEST_PATH", manifest_path),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles.generate_all_bundles(dry_run=False, agent_filter=None)
+        generate_bundles.generate_all_bundles(
+            dry_run=False,
+            agent_filter=None,
+            manifest_path=manifest_path,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert
         bundle_files = list(bundles_dir.glob("*.md"))
@@ -1292,13 +1324,14 @@ class TestGenerateAllBundles:
         manifest_path.write_text(json.dumps(manifest))
 
         # Act
-        with (
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "MANIFEST_PATH", manifest_path),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles.generate_all_bundles(dry_run=False, agent_filter=None)
+        generate_bundles.generate_all_bundles(
+            dry_run=False,
+            agent_filter=None,
+            manifest_path=manifest_path,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert
         with check:
@@ -1322,8 +1355,7 @@ class TestParseArgs:
     def test_parse_args_no_arguments_returns_defaults(self) -> None:
         """No arguments should return dry_run=False and agent=None."""
         # Act
-        with patch("sys.argv", ["generate_bundles.py"]):
-            args = generate_bundles._parse_args()
+        args = generate_bundles._parse_args([])
 
         # Assert
         with check:
@@ -1334,8 +1366,7 @@ class TestParseArgs:
     def test_parse_args_dry_run_flag_sets_true(self) -> None:
         """The --dry-run flag should set dry_run to True."""
         # Act
-        with patch("sys.argv", ["generate_bundles.py", "--dry-run"]):
-            args = generate_bundles._parse_args()
+        args = generate_bundles._parse_args(["--dry-run"])
 
         # Assert
         assert args.dry_run is True
@@ -1343,8 +1374,7 @@ class TestParseArgs:
     def test_parse_args_agent_flag_sets_value(self) -> None:
         """The --agent flag should capture the agent name."""
         # Act
-        with patch("sys.argv", ["generate_bundles.py", "--agent", "my-agent"]):
-            args = generate_bundles._parse_args()
+        args = generate_bundles._parse_args(["--agent", "my-agent"])
 
         # Assert
         assert args.agent == "my-agent"
@@ -1352,10 +1382,7 @@ class TestParseArgs:
     def test_parse_args_both_flags_combined(self) -> None:
         """Both --dry-run and --agent should work together."""
         # Act
-        with patch(
-            "sys.argv", ["generate_bundles.py", "--dry-run", "--agent", "my-agent"]
-        ):
-            args = generate_bundles._parse_args()
+        args = generate_bundles._parse_args(["--dry-run", "--agent", "my-agent"])
 
         # Assert
         with check:
@@ -1386,14 +1413,13 @@ class TestMain:
             manifest_file (Path): Temporary manifest file fixture.
         """
         # Act
-        with (
-            patch("sys.argv", ["generate_bundles.py", "--agent", "test-agent"]),
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "MANIFEST_PATH", manifest_file),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles.main()
+        generate_bundles.main(
+            ["--agent", "test-agent"],
+            manifest_path=manifest_file,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert
         with check:
@@ -1415,14 +1441,13 @@ class TestMain:
             manifest_file (Path): Temporary manifest file fixture.
         """
         # Act
-        with (
-            patch("sys.argv", ["generate_bundles.py", "--dry-run"]),
-            patch.object(generate_bundles, "SKILLS_DIR", skills_dir),
-            patch.object(generate_bundles, "BUNDLES_DIR", bundles_dir),
-            patch.object(generate_bundles, "MANIFEST_PATH", manifest_file),
-            patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
-        ):
-            generate_bundles.main()
+        generate_bundles.main(
+            ["--dry-run"],
+            manifest_path=manifest_file,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=bundles_dir.parent,
+        )
 
         # Assert
         bundle_files = list(bundles_dir.glob("*.md"))
