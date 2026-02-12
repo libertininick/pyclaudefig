@@ -1,6 +1,5 @@
 ---
 name: validate-code
-version: 1.0.0
 description: Run code validation checks (lint, format, type, docstring, doctest, test). Use when validating code quality after writing or modifying Python code.
 user-invocable: true
 argument-hint: "[--lint] [--format] [--type] [--docstring] [--doctest] [--test] [paths...]"

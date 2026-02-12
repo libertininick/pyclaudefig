@@ -1,6 +1,5 @@
 ---
 name: learn
-version: 1.0.0
 description: Learn from feedback and iteratively improve Claude Code configuration
 depends_on_agents:
   - config-learner

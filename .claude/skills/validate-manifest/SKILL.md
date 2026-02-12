@@ -1,6 +1,5 @@
 ---
 name: validate-manifest
-version: 1.0.0
 description: Validate .claude/manifest.json structure and references. Apply after modifying the manifest to ensure correctness.
 user-invocable: false
 ---

@@ -1,6 +1,5 @@
 ---
 name: code-substance-reviewer
-version: 1.1.0
 description: Reviews Python code for correctness, design quality, maintainability, and testability.
 model: opus
 color: orange

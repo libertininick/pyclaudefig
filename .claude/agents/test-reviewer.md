@@ -1,6 +1,5 @@
 ---
 name: test-reviewer
-version: 1.3.0
 description: Reviews test suites for quality, coverage completeness, organization, and realistic test data variety.
 model: opus
 color: cyan

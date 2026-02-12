@@ -1,6 +1,5 @@
 ---
 name: pr-description-template
-version: 1.0.0
 description: PR description templates with format specifications and examples. Use when generating PR descriptions. Provides the complete PR structure and writing guidance.
 argument-hint: "[template-type: feature | bugfix | refactor | format | help]"
 allowed-tools: Read, Glob

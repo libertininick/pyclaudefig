@@ -1,6 +1,5 @@
 ---
 name: code-style-reviewer
-version: 1.1.0
 description: Reviews Python code for style, conventions, and code organization using rule-based checklists.
 model: sonnet
 color: yellow

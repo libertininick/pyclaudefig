@@ -1,6 +1,5 @@
 ---
 name: fetch-docs
-version: 1.0.0
 description: Fetch framework documentation when uncertain about APIs. Use when you need up-to-date docs for approved frameworks.
 user-invocable: true
 argument-hint: <framework-or-query>

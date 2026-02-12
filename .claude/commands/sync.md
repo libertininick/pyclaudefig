@@ -1,6 +1,5 @@
 ---
 name: sync
-version: 1.0.0
 description: Sync Claude context files with skills, agents, and commands on disk
 ---
 

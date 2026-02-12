@@ -1,6 +1,5 @@
 ---
 name: update-plan
-version: 2.0.0
 description: Sync plan with main and update completed phases
 depends_on_skills:
   - plan-template

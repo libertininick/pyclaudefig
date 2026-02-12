@@ -1,6 +1,5 @@
 ---
 name: explore-project
-version: 1.0.0
 description: Explore project structure to understand layout, packages, and key files. Use when you need context about how the project is organized.
 user-invocable: true
 ---

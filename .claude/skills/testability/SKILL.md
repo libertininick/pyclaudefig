@@ -1,6 +1,5 @@
 ---
 name: testability
-version: 1.2.0
 description: Testability assessment criteria for code review. Apply when writing new code that will be tested or evaluating code for dependency injection, global state, pure functions, and test seams.
 user-invocable: false
 layers:

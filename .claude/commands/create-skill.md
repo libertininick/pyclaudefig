@@ -1,6 +1,5 @@
 ---
 name: create-skill
-version: 1.0.0
 description: Create a new Claude Code skill
 depends_on_skills:
   - skill-template

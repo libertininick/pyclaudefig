@@ -1,6 +1,5 @@
 ---
 name: pythonic-conventions
-version: 1.1.0
 description: Essential Pythonic idioms and conventions. Apply when writing or reviewing Python code to ensure idiomatic patterns like comprehensions, built-in functions, context managers, and unpacking.
 user-invocable: false
 layers:

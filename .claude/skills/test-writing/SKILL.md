@@ -1,6 +1,5 @@
 ---
 name: test-writing
-version: 1.2.0
 description: Pytest testing conventions for this codebase. Apply when writing or reviewing tests including test naming, structure, fixtures, and parametrization.
 user-invocable: false
 ---

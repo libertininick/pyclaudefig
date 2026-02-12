@@ -1,6 +1,5 @@
 ---
 name: python-code-writer
-version: 1.2.0
 description: Writes clean, maintainable, testable Python code following repository conventions. Use when implementing new features, functions, classes, or modules.
 model: sonnet
 color: blue

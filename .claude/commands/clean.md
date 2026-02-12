@@ -1,6 +1,5 @@
 ---
 name: clean
-version: 1.1.0
 description: Clean Python code by organizing, simplifying, and removing bloat
 depends_on_agents:
   - code-cleaner

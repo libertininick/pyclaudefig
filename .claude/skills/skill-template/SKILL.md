@@ -1,6 +1,5 @@
 ---
 name: skill-template
-version: 1.1.0
 description: Skill structure, frontmatter options, and writing guidelines. Reference for creating Claude Code skills.
 user-invocable: true
 ---

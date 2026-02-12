@@ -1,6 +1,5 @@
 ---
 name: planner
-version: 1.1.0
 description: Expert planning specialist for complex features and refactoring. Use PROACTIVELY when users request feature implementation, architectural changes, or complex refactoring. Automatically activated for planning tasks.
 model: opus
 color: green
