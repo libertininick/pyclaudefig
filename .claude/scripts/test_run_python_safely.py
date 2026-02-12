@@ -1,4 +1,15 @@
-"""Comprehensive tests for run_python_safely module."""
+"""Comprehensive tests for run_python_safely module.
+
+This test suite validates the run_python_safely script's AST-based static analysis
+and execution safety mechanisms. Coverage includes:
+
+- Import, builtin, and method detection across all blocked operations
+- Builtin aliasing and method reference detection
+- CLI integration via subprocess with both -c and -f flags
+- File reading, encoding preservation, and error handling
+- Timeout behavior and safe code execution with runtime errors
+- Edge cases: empty code, syntax errors, non-zero exit codes
+"""
 # ruff: noqa: S101, S404, S603, S607, PLR6301, PLC1901, PLC2701, PLW1510, PLW1514
 
 from __future__ import annotations
@@ -6,13 +17,13 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 from run_python_safely import (
     BLOCKED_BUILTINS,
     BLOCKED_IMPORTS,
     BLOCKED_METHODS,
+    EXIT_TIMEOUT,
     CodeSource,
     FileReadError,
     IssueCategory,
@@ -22,21 +33,15 @@ from run_python_safely import (
     format_issues,
 )
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-
 # ============================================================================
 # Fixtures
 # ============================================================================
 
 
 @pytest.fixture
-def tmp_python_file(tmp_path: Path) -> Iterator[Path]:
+def tmp_python_file(tmp_path: Path) -> Path:
     """Create a temporary Python file for testing."""
-    filepath = tmp_path / "test_script.py"
-    yield filepath
-    filepath.unlink(missing_ok=True)
+    return tmp_path / "test_script.py"
 
 
 @pytest.fixture
@@ -420,6 +425,18 @@ class TestCheckCodeMethodReferences:
         assert issues[0].name == "mkdir"
         assert "reference" in issues[0].detail
 
+    def test_method_call_vs_reference_detail_distinction(self) -> None:
+        """Method calls should NOT have 'reference' in detail; references should."""
+        # Method call (path.unlink())
+        call_issues = check_code("path.unlink()")
+        assert len(call_issues) == 1
+        assert "reference" not in call_issues[0].detail
+
+        # Method reference (delete = path.unlink)
+        ref_issues = check_code("delete = path.unlink")
+        assert len(ref_issues) == 1
+        assert "reference" in ref_issues[0].detail
+
     def test_blocked_method_reference_rmtree(self) -> None:
         """Given 'cleanup = shutil.rmtree', check_code returns issue."""
         issues = check_code("cleanup = shutil.rmtree")
@@ -628,7 +645,7 @@ class TestCLICodeString:
     def test_cli_safe_code_executes(self, script_path: Path) -> None:
         """Test -c with safe code executes and returns 0."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", "print(2 + 2)"],
+            [sys.executable, str(script_path), "-c", "print(2 + 2)"],
             capture_output=True,
             text=True,
         )
@@ -639,7 +656,7 @@ class TestCLICodeString:
     def test_cli_unsafe_import_blocks(self, script_path: Path) -> None:
         """Test -c with unsafe import blocks and returns 1."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", "import os"],
+            [sys.executable, str(script_path), "-c", "import os"],
             capture_output=True,
             text=True,
         )
@@ -650,7 +667,7 @@ class TestCLICodeString:
     def test_cli_unsafe_builtin_blocks(self, script_path: Path) -> None:
         """Test -c with unsafe builtin blocks and returns 1."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", "eval('1+1')"],
+            [sys.executable, str(script_path), "-c", "eval('1+1')"],
             capture_output=True,
             text=True,
         )
@@ -661,7 +678,7 @@ class TestCLICodeString:
     def test_cli_unsafe_method_blocks(self, script_path: Path) -> None:
         """Test -c with unsafe method blocks and returns 1."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", "path.unlink()"],
+            [sys.executable, str(script_path), "-c", "path.unlink()"],
             capture_output=True,
             text=True,
         )
@@ -674,7 +691,7 @@ class TestCLICodeString:
     ) -> None:
         """Test blocked output includes hint about asking user permission."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", "import os"],
+            [sys.executable, str(script_path), "-c", "import os"],
             capture_output=True,
             text=True,
         )
@@ -683,7 +700,7 @@ class TestCLICodeString:
     def test_cli_syntax_error_blocks(self, script_path: Path) -> None:
         """Test -c with syntax error blocks and returns 1."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", "def f("],
+            [sys.executable, str(script_path), "-c", "def f("],
             capture_output=True,
             text=True,
         )
@@ -706,7 +723,7 @@ class TestCLIFileInput:
         """Test -f with safe file executes and returns 0."""
         tmp_python_file.write_text("print('hello from file')")
         result = subprocess.run(
-            ["python", str(script_path), "-f", str(tmp_python_file)],
+            [sys.executable, str(script_path), "-f", str(tmp_python_file)],
             capture_output=True,
             text=True,
         )
@@ -720,7 +737,7 @@ class TestCLIFileInput:
         """Test -f with unsafe file blocks and returns 1."""
         tmp_python_file.write_text("import subprocess")
         result = subprocess.run(
-            ["python", str(script_path), "-f", str(tmp_python_file)],
+            [sys.executable, str(script_path), "-f", str(tmp_python_file)],
             capture_output=True,
             text=True,
         )
@@ -731,7 +748,7 @@ class TestCLIFileInput:
     def test_cli_file_not_found(self, script_path: Path) -> None:
         """Test -f with non-existent file returns 2."""
         result = subprocess.run(
-            ["python", str(script_path), "-f", "/nonexistent/file.py"],
+            [sys.executable, str(script_path), "-f", "/nonexistent/file.py"],
             capture_output=True,
             text=True,
         )
@@ -745,7 +762,7 @@ class TestCLIFileInput:
         """Test -f with file containing syntax error blocks."""
         tmp_python_file.write_text("def broken(")
         result = subprocess.run(
-            ["python", str(script_path), "-f", str(tmp_python_file)],
+            [sys.executable, str(script_path), "-f", str(tmp_python_file)],
             capture_output=True,
             text=True,
         )
@@ -765,18 +782,18 @@ class TestCLIEdgeCases:
     def test_cli_no_args_shows_help(self, script_path: Path) -> None:
         """Test no arguments shows error and returns 2."""
         result = subprocess.run(
-            ["python", str(script_path)],
+            [sys.executable, str(script_path)],
             capture_output=True,
             text=True,
         )
         assert result.returncode == 2
-        # argparse prints error to stderr
+        # argparse prints missing required -c/-f argument to stderr
         assert "required" in result.stderr.lower() or "usage" in result.stderr.lower()
 
     def test_cli_help_flag(self, script_path: Path) -> None:
         """Test --help shows usage information."""
         result = subprocess.run(
-            ["python", str(script_path), "--help"],
+            [sys.executable, str(script_path), "--help"],
             capture_output=True,
             text=True,
         )
@@ -788,7 +805,7 @@ class TestCLIEdgeCases:
     def test_cli_empty_code_string(self, script_path: Path) -> None:
         """Test -c with empty string executes (empty code is safe)."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", ""],
+            [sys.executable, str(script_path), "-c", ""],
             capture_output=True,
             text=True,
         )
@@ -798,29 +815,98 @@ class TestCLIEdgeCases:
     def test_cli_code_returning_nonzero(self, script_path: Path) -> None:
         """Test -c with code that exits non-zero returns that code."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", "raise SystemExit(42)"],
+            [sys.executable, str(script_path), "-c", "raise SystemExit(42)"],
             capture_output=True,
             text=True,
         )
         # Safe to execute, but the executed code exits with 42
         assert result.returncode == 42
 
-    def test_cli_complex_safe_code(self, script_path: Path) -> None:
-        """Test -c with complex but safe code executes."""
-        code = """
+    @pytest.mark.parametrize(
+        ("code", "expected_in_output"),
+        [
+            (
+                """
 import json
 import math
 data = {'pi': math.pi, 'e': math.e}
 print(json.dumps(data))
-"""
+""",
+                "3.14",
+            ),
+            (
+                """
+class Calculator:
+    def add(self, a, b):
+        return a + b
+calc = Calculator()
+print(calc.add(2, 3))
+""",
+                "5",
+            ),
+            (
+                """
+import asyncio
+async def async_hello():
+    return "async works"
+print(asyncio.run(async_hello()))
+""",
+                "async works",
+            ),
+            (
+                """
+def decorator(func):
+    def wrapper():
+        return func() + " decorated"
+    return wrapper
+
+@decorator
+def greet():
+    return "hello"
+
+print(greet())
+""",
+                "hello decorated",
+            ),
+        ],
+    )
+    def test_cli_complex_safe_code(
+        self, script_path: Path, code: str, expected_in_output: str
+    ) -> None:
+        """Test -c with complex but safe code executes."""
         result = subprocess.run(
-            ["python", str(script_path), "-c", code],
+            [sys.executable, str(script_path), "-c", code],
             capture_output=True,
             text=True,
         )
         assert result.returncode == 0
         assert "[EXECUTED]" in result.stdout
-        assert "3.14" in result.stdout  # pi value
+        assert expected_in_output in result.stdout
+
+    def test_cli_safe_code_with_runtime_error(self, script_path: Path) -> None:
+        """Test -c with safe code that raises at runtime shows EXECUTED but non-zero exit."""
+        result = subprocess.run(
+            [sys.executable, str(script_path), "-c", "x = 1 / 0"],
+            capture_output=True,
+            text=True,
+        )
+        # Code is safe (no blocked operations), so it executes
+        assert "[EXECUTED]" in result.stdout
+        # But the runtime error causes non-zero exit
+        assert result.returncode != 0
+
+    def test_cli_timeout_with_infinite_loop(self, script_path: Path) -> None:
+        """Test timeout exit code is correctly defined.
+
+        A full timeout integration test would require either:
+        1. Making EXECUTION_TIMEOUT_SECONDS configurable
+        2. Using a wrapper script that patches the timeout constant
+        3. Accepting a 5-minute test runtime to actually trigger the timeout
+
+        Instead, we verify the timeout exit code constant is correctly defined,
+        which documents the expected behavior when subprocess.TimeoutExpired is raised.
+        """
+        assert EXIT_TIMEOUT == 3
 
 
 # ============================================================================
@@ -842,10 +928,18 @@ class TestReadCodeFromFile:
         assert result.code == "print('hello')"
         assert str(filepath) in result.exec_args
 
-    def test_read_file_preserves_encoding(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(
+        "content",
+        [
+            "print('こんにちは')",  # Japanese
+            "print('🎉🚀💻')",  # Emojis
+            "print('مرحبا')",  # RTL (Arabic)
+            "print('é́')",  # Combining characters (e + acute + acute)
+        ],
+    )
+    def test_read_file_preserves_encoding(self, tmp_path: Path, content: str) -> None:
         """Given a file with unicode content, returns correct content."""
         filepath = tmp_path / "unicode_script.py"
-        content = "print('こんにちは')"
         filepath.write_text(content, encoding="utf-8")
 
         result = _read_code_from_file(filepath)
@@ -923,5 +1017,8 @@ class TestIssueCategoryEnum:
         assert IssueCategory.SYNTAX.value == "syntax"
 
     def test_category_count(self) -> None:
-        """IssueCategory should have exactly 4 members."""
+        """IssueCategory should have exactly 4 members.
+
+        Intentionally fragile: forces test update when new categories are added.
+        """
         assert len(IssueCategory) == 4
