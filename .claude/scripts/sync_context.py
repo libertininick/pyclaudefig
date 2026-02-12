@@ -194,18 +194,22 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
 # =============================================================================
 
 
-def scan_skills() -> dict[str, SkillInfo]:
+def scan_skills(*, skills_dir: Path | None = None) -> dict[str, SkillInfo]:
     """Scan skills directory and parse metadata from each SKILL.md.
+
+    Args:
+        skills_dir (Path | None): Override for SKILLS_DIR constant. Defaults to None.
 
     Returns:
         dict[str, SkillInfo]: Dict mapping skill name to SkillInfo.
     """
+    _skills_dir = skills_dir if skills_dir is not None else SKILLS_DIR
     skills: dict[str, SkillInfo] = {}
 
-    if not SKILLS_DIR.exists():
+    if not _skills_dir.exists():
         return skills
 
-    for skill_dir in sorted(SKILLS_DIR.iterdir()):
+    for skill_dir in sorted(_skills_dir.iterdir()):
         if not skill_dir.is_dir():
             continue
 
@@ -234,18 +238,22 @@ def scan_skills() -> dict[str, SkillInfo]:
     return skills
 
 
-def scan_agents() -> dict[str, AgentInfo]:
+def scan_agents(*, agents_dir: Path | None = None) -> dict[str, AgentInfo]:
     """Scan agents directory and parse metadata from each agent file.
+
+    Args:
+        agents_dir (Path | None): Override for AGENTS_DIR constant. Defaults to None.
 
     Returns:
         dict[str, AgentInfo]: Dict mapping agent name to AgentInfo.
     """
+    _agents_dir = agents_dir if agents_dir is not None else AGENTS_DIR
     agents: dict[str, AgentInfo] = {}
 
-    if not AGENTS_DIR.exists():
+    if not _agents_dir.exists():
         return agents
 
-    for agent_file in sorted(AGENTS_DIR.glob("*.md")):
+    for agent_file in sorted(_agents_dir.glob("*.md")):
         content = agent_file.read_text()
         frontmatter, _ = parse_frontmatter(content)
 
@@ -259,18 +267,22 @@ def scan_agents() -> dict[str, AgentInfo]:
     return agents
 
 
-def scan_commands() -> dict[str, CommandInfo]:
+def scan_commands(*, commands_dir: Path | None = None) -> dict[str, CommandInfo]:
     """Scan commands directory and parse metadata from each command file.
+
+    Args:
+        commands_dir (Path | None): Override for COMMANDS_DIR constant. Defaults to None.
 
     Returns:
         dict[str, CommandInfo]: Dict mapping command name to CommandInfo.
     """
+    _commands_dir = commands_dir if commands_dir is not None else COMMANDS_DIR
     commands: dict[str, CommandInfo] = {}
 
-    if not COMMANDS_DIR.exists():
+    if not _commands_dir.exists():
         return commands
 
-    for cmd_file in sorted(COMMANDS_DIR.glob("*.md")):
+    for cmd_file in sorted(_commands_dir.glob("*.md")):
         content = cmd_file.read_text()
         frontmatter, _ = parse_frontmatter(content)
 
@@ -290,14 +302,18 @@ def scan_commands() -> dict[str, CommandInfo]:
 # =============================================================================
 
 
-def load_manifest() -> dict[str, Any]:
+def load_manifest(*, manifest_path: Path | None = None) -> dict[str, Any]:
     """Load existing manifest.json.
+
+    Args:
+        manifest_path (Path | None): Override for MANIFEST_PATH constant. Defaults to None.
 
     Returns:
         dict[str, Any]: Manifest dict, or default structure if file doesn't exist.
     """
-    if MANIFEST_PATH.exists():
-        return json.loads(MANIFEST_PATH.read_text())
+    _manifest_path = manifest_path if manifest_path is not None else MANIFEST_PATH
+    if _manifest_path.exists():
+        return json.loads(_manifest_path.read_text())
     return copy.deepcopy(_DEFAULT_MANIFEST)
 
 
@@ -370,23 +386,30 @@ def generate_claude_md_sections(
     }
 
 
-def update_claude_md(sections: dict[str, str], *, dry_run: bool = False) -> list[str]:
+def update_claude_md(
+    sections: dict[str, str],
+    *,
+    dry_run: bool = False,
+    claude_md_path: Path | None = None,
+) -> list[str]:
     """Update CLAUDE.md with new section content.
 
     Args:
         sections (dict[str, str]): Dict mapping section name to new content.
         dry_run (bool): If True, don't write changes.
+        claude_md_path (Path | None): Override for CLAUDE_MD_PATH constant. Defaults to None.
 
     Returns:
         list[str]: List of changes made.
     """
+    _claude_md_path = claude_md_path if claude_md_path is not None else CLAUDE_MD_PATH
     changes: list[str] = []
 
-    if not CLAUDE_MD_PATH.exists():
+    if not _claude_md_path.exists():
         changes.append("CLAUDE.md does not exist")
         return changes
 
-    content = CLAUDE_MD_PATH.read_text()
+    content = _claude_md_path.read_text()
 
     for section_name, new_content in sections.items():
         # Match section content up to: subsection (###), separator (---), next section (##), or end
@@ -407,7 +430,7 @@ def update_claude_md(sections: dict[str, str], *, dry_run: bool = False) -> list
                 changes.append(f"Updated CLAUDE.md section: {section_name}")
 
     if changes and not dry_run:
-        CLAUDE_MD_PATH.write_text(content)
+        _claude_md_path.write_text(content)
 
     return changes
 
@@ -417,26 +440,36 @@ def update_claude_md(sections: dict[str, str], *, dry_run: bool = False) -> list
 # =============================================================================
 
 
-def regenerate_bundles(*, dry_run: bool = False) -> list[str]:
+def regenerate_bundles(
+    *,
+    dry_run: bool = False,
+    script_path: Path | None = None,
+    project_root: Path | None = None,
+) -> list[str]:
     """Run the generate_bundles.py script.
 
     Args:
         dry_run (bool): If True, don't actually regenerate.
+        script_path (Path | None): Override for GENERATE_BUNDLES_SCRIPT constant. Defaults to None.
+        project_root (Path | None): Override for PROJECT_ROOT constant. Defaults to None.
 
     Returns:
         list[str]: List of changes/output.
     """
-    if not GENERATE_BUNDLES_SCRIPT.exists():
+    _script_path = script_path if script_path is not None else GENERATE_BUNDLES_SCRIPT
+    _project_root = project_root if project_root is not None else PROJECT_ROOT
+
+    if not _script_path.exists():
         return ["generate_bundles.py not found"]
 
     if dry_run:
         return ["Would regenerate bundles"]
 
     result = subprocess.run(  # noqa: S603
-        ["uv", "run", "python", str(GENERATE_BUNDLES_SCRIPT)],  # noqa: S607
+        ["uv", "run", "python", str(_script_path)],  # noqa: S607
         capture_output=True,
         text=True,
-        cwd=PROJECT_ROOT,
+        cwd=_project_root,
         check=False,
     )
 
@@ -451,8 +484,11 @@ def regenerate_bundles(*, dry_run: bool = False) -> list[str]:
 # =============================================================================
 
 
-def main() -> int:
+def main(*, manifest_path: Path | None = None) -> int:
     """Main entry point.
+
+    Args:
+        manifest_path (Path | None): Override for MANIFEST_PATH constant. Defaults to None.
 
     Returns:
         int: Exit code (0 for success, 1 if check mode finds changes).
@@ -476,6 +512,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    _manifest_path = manifest_path if manifest_path is not None else MANIFEST_PATH
+
     all_changes: list[str] = []
 
     print("Scanning directories...")
@@ -490,12 +528,12 @@ def main() -> int:
         print(f"  Found {len(commands)} commands")
 
     print("Updating manifest.json...")
-    manifest = load_manifest()
+    manifest = load_manifest(manifest_path=_manifest_path)
     manifest, manifest_changes = update_manifest(manifest, skills, agents, commands)
     all_changes.extend(manifest_changes)
 
     if manifest_changes and not args.dry_run and not args.check:
-        MANIFEST_PATH.write_text(json.dumps(manifest, indent=2) + "\n")
+        _manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
 
     print("Updating CLAUDE.md...")
     sections = generate_claude_md_sections(skills, agents, commands, manifest)

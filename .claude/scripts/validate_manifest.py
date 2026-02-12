@@ -50,21 +50,26 @@ COMMAND_REQUIRED_FIELDS: Final[frozenset[str]] = frozenset(
 )
 
 
-def load_manifest() -> dict[str, Any] | None:
+def load_manifest(manifest_path: Path | None = None) -> dict[str, Any] | None:
     """Load and parse the manifest.json file.
+
+    Args:
+        manifest_path (Path | None): Path to the manifest file. Defaults to
+            MANIFEST_PATH if not provided.
 
     Returns:
         dict[str, Any] | None: The parsed manifest data, or None if parsing
             fails.
     """
+    resolved_path = manifest_path or MANIFEST_PATH
     try:
-        with MANIFEST_PATH.open() as f:
+        with resolved_path.open() as f:
             return json.load(f)
     except json.JSONDecodeError as e:
         print(f"JSON syntax error: {e}", file=sys.stderr)
         return None
     except FileNotFoundError:
-        print(f"Manifest file not found: {MANIFEST_PATH}", file=sys.stderr)
+        print(f"Manifest file not found: {resolved_path}", file=sys.stderr)
         return None
 
 
@@ -171,10 +176,15 @@ def validate_agents(
         )
 
         # Check depends_on_skills references existing skills
-        depends_on = agent.get("depends_on_skills", [])
-        for dep in depends_on:
-            if dep not in valid_skill_names:
-                errors.append(f"Agent '{agent_name}' depends on unknown skill: '{dep}'")
+        errors.extend(
+            _validate_dependency_references(
+                agent.get("depends_on_skills", []),
+                valid_skill_names,
+                agent_name,
+                "skill",
+                "Agent",
+            )
+        )
 
     return errors, agent_names
 
@@ -184,6 +194,7 @@ def _validate_dependency_references(
     valid_names: set[str],
     entry_name: str,
     dependency_type: str,
+    entry_type: str,
 ) -> list[str]:
     """Validate that all dependencies reference existing entries.
 
@@ -195,12 +206,14 @@ def _validate_dependency_references(
             messages).
         dependency_type (str): Type of dependency being checked (e.g.,
             'skill', 'agent').
+        entry_type (str): Type of entry being validated (e.g., 'Command',
+            'Agent').
 
     Returns:
         list[str]: List of validation error messages for unknown dependencies.
     """
     return [
-        f"Command '{entry_name}' depends on unknown {dependency_type}: '{dep}'"
+        f"{entry_type} '{entry_name}' depends on unknown {dependency_type}: '{dep}'"
         for dep in dependencies
         if dep not in valid_names
     ]
@@ -252,6 +265,7 @@ def validate_commands(
                 valid_skill_names,
                 command_name,
                 "skill",
+                "Command",
             )
         )
 
@@ -262,6 +276,7 @@ def validate_commands(
                 valid_agent_names,
                 command_name,
                 "agent",
+                "Command",
             )
         )
 
@@ -298,9 +313,14 @@ def validate_manifest(manifest: dict[str, Any]) -> list[str]:
     return errors
 
 
-def main() -> None:
-    """Entry point for the manifest validation script."""
-    manifest = load_manifest()
+def main(manifest_path: Path | None = None) -> None:
+    """Entry point for the manifest validation script.
+
+    Args:
+        manifest_path (Path | None): Path to the manifest file. Defaults to
+            MANIFEST_PATH if not provided.
+    """
+    manifest = load_manifest(manifest_path)
     if manifest is None:
         sys.exit(1)
         return  # Unreachable, but helps type narrowing

@@ -15,7 +15,7 @@ What This Tool Catches Well (Agent Mistakes):
     - Shell execution: subprocess, os.system (os is blocked)
     - Network access: socket, requests, httpx, urllib
     - Code injection: eval(), exec(), compile(), __import__()
-    - Runaway execution: 5-minute timeout prevents infinite loops
+    - Runaway execution: configurable timeout prevents infinite loops (default 5 minutes)
 
 What This Tool Allows:
     - Pure computation (math, string manipulation, data structures)
@@ -50,7 +50,7 @@ Exit codes:
     0: Code executed successfully
     1: Code blocked due to safety concerns
     2: Usage error or file not found
-    3: Execution timed out (5 minute limit)
+    3: Execution timed out (configurable via --timeout, default 5 minutes)
 """
 
 from __future__ import annotations
@@ -634,7 +634,7 @@ def main() -> int:
         return EXIT_BLOCKED
 
     print("[EXECUTED]", flush=True)
-    return _execute_code(source.exec_args)
+    return _execute_code(source.exec_args, timeout=args.timeout)
 
 
 # =============================================================================
@@ -657,7 +657,7 @@ Exit codes:
   0  Code executed successfully
   1  Code blocked due to safety concerns
   2  Usage error or file not found
-  3  Execution timed out (5 minute limit)
+  3  Execution timed out (configurable via --timeout, default 5 minutes)
 """,
     )
 
@@ -673,6 +673,15 @@ Exit codes:
         "--file",
         metavar="FILE",
         help="Path to Python file to execute",
+    )
+
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        metavar="SECONDS",
+        type=int,
+        default=EXECUTION_TIMEOUT_SECONDS,
+        help=f"Execution timeout in seconds (default: {EXECUTION_TIMEOUT_SECONDS})",
     )
 
     return parser
@@ -710,23 +719,26 @@ def _get_code_source(args: argparse.Namespace) -> CodeSource:  # pragma: no cove
     return _read_code_from_file(Path(args.file))
 
 
-def _execute_code(exec_args: list[str]) -> int:  # pragma: no cover
+def _execute_code(
+    exec_args: list[str], timeout: int = EXECUTION_TIMEOUT_SECONDS
+) -> int:  # pragma: no cover
     """Execute code with timeout protection.
 
     Args:
         exec_args (list[str]): Arguments for subprocess.run.
+        timeout (int): Execution timeout in seconds.
 
     Returns:
         int: Exit code from the subprocess, or EXIT_TIMEOUT if timed out.
     """
     try:
         result = subprocess.run(  # noqa: S603
-            exec_args, check=False, timeout=EXECUTION_TIMEOUT_SECONDS
+            exec_args, check=False, timeout=timeout
         )
         return result.returncode
     except subprocess.TimeoutExpired:
         print(
-            f"\n[TIMEOUT] Code execution timed out after {EXECUTION_TIMEOUT_SECONDS // 60} minutes.",
+            f"\n[TIMEOUT] Code execution timed out after {timeout // 60} minutes.",
             file=sys.stderr,
         )
         return EXIT_TIMEOUT

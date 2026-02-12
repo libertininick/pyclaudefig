@@ -1,111 +1,144 @@
 """Tests for the code validation script.
 
-This module provides comprehensive tests for validate_code.py, covering
-individual check functions, check orchestration, CLI argument parsing,
-and exit codes.
+This module tests validate_code.py using real subprocess invocations wherever
+possible. Only one test uses mocking: exception propagation from subprocess.run,
+which cannot be triggered with real tools.
 """
 
-# ruff: noqa: FBT001, PLR6301, S101, S404 # this is a test module
+# ruff: noqa: FBT001, PLR6301, S101, S404, S603, S607 # this is a test module
 
 from __future__ import annotations
 
 import subprocess
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import validate_code
 from pytest_check import check
 
+_SCRIPT_PATH = str(Path(__file__).resolve().parent / "validate_code.py")
+
+
 # ---------------------------------------------------------------------------
-# Fixtures & helpers
+# Fixtures
 # ---------------------------------------------------------------------------
 
-# Maps each check key -> (function, expected subprocess command prefix)
-_CHECK_COMMANDS: dict[str, tuple[str, list[str]]] = {
-    "lint": ("run_lint", ["uv", "run", "ruff", "check"]),
-    "format": ("run_format_check", ["uv", "run", "ruff", "format", "--check"]),
-    "type": ("run_type_check", ["uv", "run", "ty", "check"]),
-    "doctest": ("run_doctest", ["uv", "run", "pytest", "--doctest-modules"]),
-    "docstring": (
-        "run_docstring_check",
-        [
-            "uv",
-            "tool",
-            "run",
-            "pydoclint",
-            "--style=google",
-            "--allow-init-docstring=True",
-        ],
-    ),
-    "test": ("run_tests", ["uv", "run", "pytest", "--cov"]),
-}
 
-_CHECK_KEYS = sorted(_CHECK_COMMANDS)
+@pytest.fixture
+def clean_python_file(tmp_path: Path) -> str:
+    """Create a Python file that passes lint and format checks.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+
+    Returns:
+        str: Path to the clean file.
+    """
+    f = tmp_path / "clean.py"
+    f.write_text('"""A clean module."""\n\nx = 1\n')
+    return str(f)
 
 
-class TestIndividualCheckFunctions:
-    """Tests for individual check functions (run_lint, run_format_check, etc.)."""
+@pytest.fixture
+def lint_failing_file(tmp_path: Path) -> str:
+    """Create a Python file with unused imports (fails lint, passes format).
 
-    @pytest.mark.parametrize("key", _CHECK_KEYS)
-    def test_check_success_returns_true(self, key: str) -> None:
-        """Each check function should return True when subprocess returns code 0.
+    Args:
+        tmp_path (Path): Pytest temporary directory.
 
-        Args:
-            key (str): Check key from _CHECK_COMMANDS.
-        """
-        func_name, _ = _CHECK_COMMANDS[key]
-        func = getattr(validate_code, func_name)
-        mock_result = MagicMock(returncode=0)
+    Returns:
+        str: Path to the file with lint errors.
+    """
+    f = tmp_path / "bad_lint.py"
+    f.write_text("import os\nimport sys\n\nprint('unused imports')\n")
+    return str(f)
 
-        with patch.object(subprocess, "run", return_value=mock_result):
-            result = func(["."])
 
-        assert result is True
+@pytest.fixture
+def multi_failing_file(tmp_path: Path) -> str:
+    """Create a Python file that fails both lint and format checks.
 
-    @pytest.mark.parametrize("key", _CHECK_KEYS)
-    def test_check_failure_returns_false(self, key: str) -> None:
-        """Each check function should return False when subprocess returns non-zero code.
+    Args:
+        tmp_path (Path): Pytest temporary directory.
 
-        Args:
-            key (str): Check key from _CHECK_COMMANDS.
-        """
-        func_name, _ = _CHECK_COMMANDS[key]
-        func = getattr(validate_code, func_name)
-        mock_result = MagicMock(returncode=1)
+    Returns:
+        str: Path to the file with lint and format errors.
+    """
+    f = tmp_path / "bad_multi.py"
+    f.write_text("import os\nx=1\n")
+    return str(f)
 
-        with patch.object(subprocess, "run", return_value=mock_result):
-            result = func(["."])
 
-        assert result is False
+# ---------------------------------------------------------------------------
+# Check Functions — real subprocess, no mocking
+# ---------------------------------------------------------------------------
 
-    @pytest.mark.parametrize("key", _CHECK_KEYS)
-    def test_check_calls_correct_command(self, key: str) -> None:
-        """Each check function should invoke its expected subprocess command.
 
-        Args:
-            key (str): Check key from _CHECK_COMMANDS.
-        """
-        func_name, expected_prefix = _CHECK_COMMANDS[key]
-        func = getattr(validate_code, func_name)
-        mock_result = MagicMock(returncode=0)
-        paths = ["src/", "tests/"]
+class TestCheckFunctions:
+    """Smoke tests for individual check functions with real subprocess."""
 
-        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
-            func(paths)
+    def test_run_lint_clean_returns_true(self, clean_python_file: str) -> None:
+        """run_lint on a clean file should return True."""
+        assert validate_code.run_lint([clean_python_file]) is True
 
-        mock_run.assert_called_once_with([*expected_prefix, *paths], check=False)
+    def test_run_lint_bad_returns_false(self, lint_failing_file: str) -> None:
+        """run_lint on a file with unused imports should return False."""
+        assert validate_code.run_lint([lint_failing_file]) is False
+
+    def test_run_format_check_clean_returns_true(self, clean_python_file: str) -> None:
+        """run_format_check on a well-formatted file should return True."""
+        assert validate_code.run_format_check([clean_python_file]) is True
+
+    def test_run_type_check_clean_returns_true(self, clean_python_file: str) -> None:
+        """run_type_check on a type-correct file should return True."""
+        assert validate_code.run_type_check([clean_python_file]) is True
+
+    def test_run_doctest_clean_returns_true(self, tmp_path: Path) -> None:
+        """run_doctest on a file with a passing doctest should return True."""
+        f = tmp_path / "with_doctest.py"
+        f.write_text(
+            '"""Module with doctest."""\n\n\n'
+            "def add(a: int, b: int) -> int:\n"
+            '    """Add two numbers.\n\n'
+            "    >>> add(1, 2)\n"
+            "    3\n"
+            '    """\n'
+            "    return a + b\n"
+        )
+        assert validate_code.run_doctest([str(f)]) is True
+
+    def test_run_docstring_check_clean_returns_true(self, tmp_path: Path) -> None:
+        """run_docstring_check on a properly documented file should return True."""
+        f = tmp_path / "documented.py"
+        f.write_text(
+            '"""Documented module."""\n\n\n'
+            "def greet(name: str) -> str:\n"
+            '    """Greet someone.\n\n'
+            "    Args:\n"
+            "        name (str): The name.\n\n"
+            "    Returns:\n"
+            "        str: The greeting.\n"
+            '    """\n'
+            '    return f"Hello, {name}"\n'
+        )
+        assert validate_code.run_docstring_check([str(f)]) is True
+
+
+# ---------------------------------------------------------------------------
+# CHECK_REGISTRY — structural validation, no subprocess
+# ---------------------------------------------------------------------------
 
 
 class TestCheckRegistry:
     """Tests for CHECK_REGISTRY structure and contents."""
 
-    def test_check_registry_contains_all_checks(self) -> None:
+    def test_contains_all_checks(self) -> None:
         """CHECK_REGISTRY should contain all expected check types."""
         expected_keys = {"lint", "format", "type", "docstring", "doctest", "test"}
-        with check:
-            assert set(validate_code.CHECK_REGISTRY.keys()) == expected_keys
+        assert set(validate_code.CHECK_REGISTRY.keys()) == expected_keys
 
-    def test_check_registry_entries_have_label_and_function(self) -> None:
+    def test_entries_have_label_and_function(self) -> None:
         """Each CHECK_REGISTRY entry should have a label string and callable function."""
         for key, (label, func) in validate_code.CHECK_REGISTRY.items():
             with check:
@@ -115,307 +148,214 @@ class TestCheckRegistry:
             with check:
                 assert callable(func), f"Check '{key}' should have a callable function"
 
-    @pytest.mark.parametrize(
-        ("key", "expected_func_name"),
-        [
-            ("lint", "run_lint"),
-            ("format", "run_format_check"),
-            ("type", "run_type_check"),
-            ("docstring", "run_docstring_check"),
-            ("doctest", "run_doctest"),
-            ("test", "run_tests"),
-        ],
-    )
-    def test_check_registry_maps_to_correct_function(
-        self, key: str, expected_func_name: str
-    ) -> None:
-        """Each CHECK_REGISTRY entry should map to the correct check function.
 
-        Args:
-            key (str): Registry key to look up.
-            expected_func_name (str): Name of the expected function on validate_code.
-        """
-        _, func = validate_code.CHECK_REGISTRY[key]
-        assert func is getattr(validate_code, expected_func_name)
+# ---------------------------------------------------------------------------
+# run_checks — orchestration logic, real subprocess (1 mock for exception)
+# ---------------------------------------------------------------------------
 
 
 class TestRunChecks:
-    """Tests for run_checks orchestration function."""
+    """Tests for run_checks orchestration function.
 
-    def test_all_pass_returns_true(self) -> None:
+    All tests use real subprocess invocations except
+    test_subprocess_exception_propagates, which requires simulating
+    a FileNotFoundError that cannot occur when tools are installed.
+    """
+
+    def test_all_selected_pass_returns_true(self, clean_python_file: str) -> None:
         """run_checks should return True when all selected checks pass."""
-        mock_result = MagicMock(returncode=0)
-
-        with patch.object(subprocess, "run", return_value=mock_result):
-            result = validate_code.run_checks(["lint", "format"], ["."])
-
+        result = validate_code.run_checks(["lint", "format"], [clean_python_file])
         assert result is True
 
-    def test_some_fail_returns_false(self) -> None:
-        """run_checks should return False when some checks fail."""
-        mock_results = [MagicMock(returncode=0), MagicMock(returncode=1)]
+    def test_any_fail_returns_false(self, lint_failing_file: str) -> None:
+        """run_checks should return False when any check fails.
 
-        with patch.object(subprocess, "run", side_effect=mock_results):
-            result = validate_code.run_checks(["lint", "format"], ["."])
-
+        lint_failing_file fails lint but passes format, so the combined
+        result should be False.
+        """
+        result = validate_code.run_checks(["lint", "format"], [lint_failing_file])
         assert result is False
 
-    def test_all_fail_returns_false(self) -> None:
-        """run_checks should return False when all checks fail."""
-        mock_result = MagicMock(returncode=1)
-
-        with patch.object(subprocess, "run", return_value=mock_result):
-            result = validate_code.run_checks(["lint", "format", "type"], ["."])
-
+    def test_all_selected_fail_returns_false(self, multi_failing_file: str) -> None:
+        """run_checks should return False when all selected checks fail."""
+        result = validate_code.run_checks(["lint", "format"], [multi_failing_file])
         assert result is False
 
-    def test_runs_all_selected_checks(self) -> None:
-        """run_checks should run all selected checks even if some fail."""
-        mock_results = [
-            MagicMock(returncode=0),
-            MagicMock(returncode=1),
-            MagicMock(returncode=0),
-        ]
+    def test_single_pass_returns_true(self, clean_python_file: str) -> None:
+        """run_checks with a single passing check should return True."""
+        result = validate_code.run_checks(["lint"], [clean_python_file])
+        assert result is True
 
-        with patch.object(subprocess, "run", side_effect=mock_results) as mock_run:
-            validate_code.run_checks(["lint", "format", "type"], ["."])
-
-        assert mock_run.call_count == 3
-
-    def test_passes_paths_to_each_check(self) -> None:
-        """run_checks should pass provided paths to each check function."""
-        mock_result = MagicMock(returncode=0)
-        paths = ["src/", "tests/"]
-
-        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
-            validate_code.run_checks(["lint"], paths)
-
-        mock_run.assert_called_once_with(
-            ["uv", "run", "ruff", "check", *paths], check=False
-        )
+    def test_single_fail_returns_false(self, lint_failing_file: str) -> None:
+        """run_checks with a single failing check should return False."""
+        result = validate_code.run_checks(["lint"], [lint_failing_file])
+        assert result is False
 
     def test_empty_selected_returns_true(self) -> None:
         """run_checks with no selected checks should return True."""
         result = validate_code.run_checks([], ["."])
         assert result is True
 
-    @pytest.mark.parametrize("returncode,expected", [(0, True), (1, False)])
-    def test_single_check_returns_expected(
-        self, returncode: int, expected: bool
-    ) -> None:
-        """run_checks with single check should reflect that check's result.
+    def test_invalid_check_key_raises_key_error(self) -> None:
+        """run_checks with an unrecognized check key should raise KeyError."""
+        with pytest.raises(KeyError):
+            validate_code.run_checks(["invalid_key"], ["."])
 
-        Args:
-            returncode (int): Simulated subprocess return code.
-            expected (bool): Expected boolean result from run_checks.
+    def test_subprocess_exception_propagates(self) -> None:
+        """Exceptions from subprocess.run should propagate to the caller.
+
+        This is the only mocked test: a FileNotFoundError cannot be triggered
+        when uv is installed, but the propagation behavior should be documented.
         """
-        mock_result = MagicMock(returncode=returncode)
-
-        with patch.object(subprocess, "run", return_value=mock_result):
-            result = validate_code.run_checks(["type"], ["."])
-
-        assert result is expected
-
-
-class TestCliArgumentParsing:
-    """Tests for CLI argument parsing and check selection logic."""
-
-    def test_no_flags_runs_all_checks(self) -> None:
-        """main() with no flags should run all checks."""
-        mock_result = MagicMock(returncode=0)
-
         with (
-            patch.object(subprocess, "run", return_value=mock_result),
-            patch("sys.argv", ["validate_code.py"]),
-            pytest.raises(SystemExit) as exc_info,
+            patch.object(
+                subprocess, "run", side_effect=FileNotFoundError("uv not found")
+            ),
+            pytest.raises(FileNotFoundError, match="uv not found"),
         ):
-            validate_code.main()
+            validate_code.run_checks(["lint"], ["."])
 
-        assert exc_info.value.code == validate_code.EXIT_SUCCESS
 
-    def test_all_flag_runs_all_checks(self) -> None:
-        """main() with --all flag should run all checks."""
-        mock_result = MagicMock(returncode=0)
+# ---------------------------------------------------------------------------
+# CLI — real subprocess invocations, no mocking
+# ---------------------------------------------------------------------------
 
-        with (
-            patch.object(subprocess, "run", return_value=mock_result),
-            patch("sys.argv", ["validate_code.py", "--all"]),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_code.main()
 
-        assert exc_info.value.code == validate_code.EXIT_SUCCESS
+class TestCli:
+    """Integration tests for CLI argument parsing and execution.
 
-    @pytest.mark.parametrize(
-        ("flag", "expected_tokens"),
-        [
-            ("--lint", ["ruff", "check"]),
-            ("--format", ["ruff", "format"]),
-            ("--type", ["ty", "check"]),
-            ("--docstring", ["pydoclint"]),
-            ("--doctest", ["pytest", "--doctest-modules"]),
-            ("--test", ["pytest", "--cov"]),
-        ],
-    )
-    def test_single_flag_runs_only_that_check(
-        self, flag: str, expected_tokens: list[str]
-    ) -> None:
-        """main() with a single flag should run only the corresponding check.
+    All tests run the actual script via subprocess.run and assert on
+    exit codes and stdout content. Temporary files ensure predictable results.
+    """
 
-        Args:
-            flag (str): CLI flag to pass to main().
-            expected_tokens (list[str]): Tokens expected in the subprocess command.
-        """
-        mock_result = MagicMock(returncode=0)
+    def test_help_flag_exits_zero(self) -> None:
+        """CLI with --help should exit with code 0 and print usage."""
+        result = subprocess.run(
+            ["uv", "run", "python", _SCRIPT_PATH, "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-        with (
-            patch.object(subprocess, "run", return_value=mock_result) as mock_run,
-            patch("sys.argv", ["validate_code.py", flag]),
-            pytest.raises(SystemExit),
-        ):
-            validate_code.main()
-
-        assert mock_run.call_count == 1
-        call_args = mock_run.call_args[0][0]
-        for token in expected_tokens:
-            with check:
-                assert token in call_args
-
-    def test_multiple_flags_runs_selected_checks(self) -> None:
-        """main() with multiple flags should run only those checks."""
-        mock_result = MagicMock(returncode=0)
-
-        with (
-            patch.object(subprocess, "run", return_value=mock_result) as mock_run,
-            patch("sys.argv", ["validate_code.py", "--lint", "--type"]),
-            pytest.raises(SystemExit),
-        ):
-            validate_code.main()
-
-        assert mock_run.call_count == 2
-
-    def test_default_path_is_current_directory(self) -> None:
-        """main() without path argument should use current directory."""
-        mock_result = MagicMock(returncode=0)
-
-        with (
-            patch.object(subprocess, "run", return_value=mock_result) as mock_run,
-            patch("sys.argv", ["validate_code.py", "--lint"]),
-            pytest.raises(SystemExit),
-        ):
-            validate_code.main()
-
-        call_args = mock_run.call_args[0][0]
-        assert "." in call_args
-
-    def test_single_path_argument(self) -> None:
-        """main() should accept and use single path argument."""
-        mock_result = MagicMock(returncode=0)
-
-        with (
-            patch.object(subprocess, "run", return_value=mock_result) as mock_run,
-            patch("sys.argv", ["validate_code.py", "--lint", "src/"]),
-            pytest.raises(SystemExit),
-        ):
-            validate_code.main()
-
-        call_args = mock_run.call_args[0][0]
-        assert "src/" in call_args
-
-    def test_multiple_path_arguments(self) -> None:
-        """main() should accept and use multiple path arguments."""
-        mock_result = MagicMock(returncode=0)
-
-        with (
-            patch.object(subprocess, "run", return_value=mock_result) as mock_run,
-            patch("sys.argv", ["validate_code.py", "--type", "src/", "tests/"]),
-            pytest.raises(SystemExit),
-        ):
-            validate_code.main()
-
-        call_args = mock_run.call_args[0][0]
         with check:
-            assert "src/" in call_args
+            assert result.returncode == 0
         with check:
-            assert "tests/" in call_args
+            assert "usage:" in result.stdout.lower()
+        with check:
+            assert "--lint" in result.stdout
 
+    def test_lint_clean_file_exits_zero(self, tmp_path: Path) -> None:
+        """CLI with --lint on a clean file should exit with code 0."""
+        clean_file = tmp_path / "clean.py"
+        clean_file.write_text('"""A clean module."""\n\nx = 1\n')
 
-class TestExitCodes:
-    """Tests for main() function exit codes."""
+        result = subprocess.run(
+            ["uv", "run", "python", _SCRIPT_PATH, "--lint", str(clean_file)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-    def test_all_checks_pass_exits_zero(self) -> None:
-        """main() should exit with code 0 when all checks pass."""
-        mock_result = MagicMock(returncode=0)
+        assert result.returncode == validate_code.EXIT_SUCCESS
 
-        with (
-            patch.object(subprocess, "run", return_value=mock_result),
-            patch("sys.argv", ["validate_code.py"]),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_code.main()
+    def test_lint_bad_file_exits_one(self, tmp_path: Path) -> None:
+        """CLI with --lint on a file with lint errors should exit with code 1."""
+        bad_file = tmp_path / "bad.py"
+        bad_file.write_text("import os\nimport sys\n\nprint('unused imports')\n")
 
-        assert exc_info.value.code == validate_code.EXIT_SUCCESS
+        result = subprocess.run(
+            ["uv", "run", "python", _SCRIPT_PATH, "--lint", str(bad_file)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-    def test_single_check_fails_exits_one(self) -> None:
-        """main() should exit with code 1 when a check fails."""
-        mock_result = MagicMock(returncode=1)
+        assert result.returncode == validate_code.EXIT_FAILURE
 
-        with (
-            patch.object(subprocess, "run", return_value=mock_result),
-            patch("sys.argv", ["validate_code.py", "--lint"]),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_code.main()
+    def test_multiple_flags_runs_multiple_checks(self, tmp_path: Path) -> None:
+        """CLI with multiple flags should run all selected checks."""
+        clean_file = tmp_path / "clean.py"
+        clean_file.write_text('"""A clean module."""\n\nx = 1\n')
 
-        assert exc_info.value.code == validate_code.EXIT_FAILURE
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                _SCRIPT_PATH,
+                "--lint",
+                "--format",
+                str(clean_file),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-    def test_some_checks_fail_exits_one(self) -> None:
-        """main() should exit with code 1 when some checks fail."""
-        mock_results = [MagicMock(returncode=0), MagicMock(returncode=1)]
+        with check:
+            assert "Lint" in result.stdout
+        with check:
+            assert "Format" in result.stdout
+        with check:
+            assert result.returncode == validate_code.EXIT_SUCCESS
 
-        with (
-            patch.object(subprocess, "run", side_effect=mock_results),
-            patch("sys.argv", ["validate_code.py", "--lint", "--format"]),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_code.main()
+    def test_all_flag_runs_all_checks(self, tmp_path: Path) -> None:
+        """CLI with --all flag should run all checks."""
+        clean_file = tmp_path / "clean.py"
+        clean_file.write_text('"""A clean module."""\n\nx = 1\n')
 
-        assert exc_info.value.code == validate_code.EXIT_FAILURE
+        result = subprocess.run(
+            ["uv", "run", "python", _SCRIPT_PATH, "--all", str(clean_file)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-    def test_all_checks_fail_exits_one(self) -> None:
-        """main() should exit with code 1 when all checks fail."""
-        mock_result = MagicMock(returncode=1)
+        with check:
+            assert "Lint" in result.stdout
+        with check:
+            assert "Format" in result.stdout
+        with check:
+            assert "Type Check" in result.stdout
+        with check:
+            assert "Docstring" in result.stdout
 
-        with (
-            patch.object(subprocess, "run", return_value=mock_result),
-            patch("sys.argv", ["validate_code.py", "--lint", "--format", "--type"]),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_code.main()
+    def test_custom_path_argument(self, tmp_path: Path) -> None:
+        """CLI should accept and use a custom path argument."""
+        subdir = tmp_path / "src"
+        subdir.mkdir()
+        clean_file = subdir / "module.py"
+        clean_file.write_text('"""A clean module."""\n\nx = 1\n')
 
-        assert exc_info.value.code == validate_code.EXIT_FAILURE
+        result = subprocess.run(
+            ["uv", "run", "python", _SCRIPT_PATH, "--lint", str(clean_file)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-    def test_selected_checks_all_pass_exits_zero(self) -> None:
-        """main() should exit with code 0 when all selected checks pass."""
-        mock_result = MagicMock(returncode=0)
+        assert result.returncode == validate_code.EXIT_SUCCESS
 
-        with (
-            patch.object(subprocess, "run", return_value=mock_result),
-            patch("sys.argv", ["validate_code.py", "--docstring", "--test"]),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_code.main()
+    def test_multiple_path_arguments(self, tmp_path: Path) -> None:
+        """CLI should accept and use multiple path arguments."""
+        file1 = tmp_path / "module1.py"
+        file1.write_text('"""Module 1."""\n\nx = 1\n')
+        file2 = tmp_path / "module2.py"
+        file2.write_text('"""Module 2."""\n\ny = 2\n')
 
-        assert exc_info.value.code == validate_code.EXIT_SUCCESS
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                _SCRIPT_PATH,
+                "--lint",
+                str(file1),
+                str(file2),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-
-class TestConstants:
-    """Tests for module-level constants."""
-
-    def test_exit_success_constant_is_zero(self) -> None:
-        """EXIT_SUCCESS constant should be 0."""
-        assert validate_code.EXIT_SUCCESS == 0
-
-    def test_exit_failure_constant_is_one(self) -> None:
-        """EXIT_FAILURE constant should be 1."""
-        assert validate_code.EXIT_FAILURE == 1
+        assert result.returncode == validate_code.EXIT_SUCCESS

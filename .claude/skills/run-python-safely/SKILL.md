@@ -37,6 +37,9 @@ uv run python .claude/scripts/run_python_safely.py -c "print(2 + 2)"
 
 # Execute code from file
 uv run python .claude/scripts/run_python_safely.py -f script.py
+
+# Execute with custom timeout (in seconds)
+uv run python .claude/scripts/run_python_safely.py -t 60 -c "print('done')"
 ```
 
 ## Exit Codes
@@ -46,7 +49,7 @@ uv run python .claude/scripts/run_python_safely.py -f script.py
 | 0 | Code executed successfully |
 | 1 | Code blocked due to safety concerns |
 | 2 | Usage error or file not found |
-| 3 | Execution timed out (5 minute limit) |
+| 3 | Execution timed out (default 5 minutes, configurable via `-t`) |
 
 ## Output Format
 

@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
 
 import pytest
 import validate_manifest
@@ -150,8 +149,7 @@ class TestInvalidJsonSyntax:
         manifest_path.write_text("{invalid json: without quotes}")
 
         # Act
-        with patch.object(validate_manifest, "MANIFEST_PATH", manifest_path):
-            result = validate_manifest.load_manifest()
+        result = validate_manifest.load_manifest(manifest_path)
 
         # Assert
         assert result is None
@@ -166,8 +164,7 @@ class TestInvalidJsonSyntax:
         nonexistent_path = tmp_path / "nonexistent.json"
 
         # Act
-        with patch.object(validate_manifest, "MANIFEST_PATH", nonexistent_path):
-            result = validate_manifest.load_manifest()
+        result = validate_manifest.load_manifest(nonexistent_path)
 
         # Assert
         assert result is None
@@ -182,8 +179,7 @@ class TestInvalidJsonSyntax:
             valid_manifest (dict[str, Any]): Valid manifest fixture.
         """
         # Act
-        with patch.object(validate_manifest, "MANIFEST_PATH", manifest_file):
-            result = validate_manifest.load_manifest()
+        result = validate_manifest.load_manifest(manifest_file)
 
         # Assert
         assert result == valid_manifest
@@ -220,8 +216,28 @@ class TestMissingRequiredFields:
         with check:
             assert "name" in errors[0]
 
-    def test_validate_skills_missing_multiple_fields_returns_all_missing(self) -> None:
-        """Skill missing multiple fields should list all missing fields."""
+    def test_validate_skills_empty_name_passes_validation(self) -> None:
+        """Skill with empty string name passes required-fields check (key exists)."""
+        # Arrange
+        manifest = {
+            "categories": {"conventions": {"description": "Test"}},
+            "skills": [
+                {
+                    "name": "",
+                    "category": "conventions",
+                    "description": "Test skill",
+                }
+            ],
+        }
+
+        # Act
+        errors, _ = validate_manifest.validate_skills(manifest, {"conventions"})
+
+        # Assert
+        assert errors == []
+
+    def test_validate_skills_missing_description_returns_error(self) -> None:
+        """Skill missing description field should list missing field."""
         # Arrange
         manifest = {
             "categories": {"conventions": {"description": "Test"}},
@@ -239,6 +255,29 @@ class TestMissingRequiredFields:
 
         # Assert
         assert len(errors) == 1
+        with check:
+            assert "description" in errors[0]
+
+    def test_validate_skills_missing_multiple_fields_returns_all_errors(self) -> None:
+        """Skill missing multiple fields should list all missing fields in one error."""
+        # Arrange
+        manifest = {
+            "categories": {"conventions": {"description": "Test"}},
+            "skills": [
+                {
+                    "name": "test-skill",
+                    # Missing: category, description
+                }
+            ],
+        }
+
+        # Act
+        errors, _ = validate_manifest.validate_skills(manifest, {"conventions"})
+
+        # Assert
+        assert len(errors) == 1
+        with check:
+            assert "category" in errors[0]
         with check:
             assert "description" in errors[0]
 
@@ -328,6 +367,26 @@ class TestInvalidCategories:
                 {
                     "name": "test-skill",
                     "category": "conventions",
+                    "description": "Test skill",
+                }
+            ],
+        }
+
+        # Act
+        errors, _ = validate_manifest.validate_skills(manifest, {"conventions"})
+
+        # Assert
+        assert errors == []
+
+    def test_validate_skills_none_category_returns_no_error(self) -> None:
+        """Skill with None category passes validation (category check skips None)."""
+        # Arrange
+        manifest = {
+            "categories": {"conventions": {"description": "Test"}},
+            "skills": [
+                {
+                    "name": "test-skill",
+                    "category": None,
                     "description": "Test skill",
                 }
             ],
@@ -578,11 +637,8 @@ class TestMainExitCodes:
             manifest_file (Path): Temporary manifest file fixture.
         """
         # Act/Assert
-        with (
-            patch.object(validate_manifest, "MANIFEST_PATH", manifest_file),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_manifest.main()
+        with pytest.raises(SystemExit) as exc_info:
+            validate_manifest.main(manifest_file)
 
         assert exc_info.value.code == 0
 
@@ -597,11 +653,8 @@ class TestMainExitCodes:
         manifest_path.write_text("{invalid json}")
 
         # Act/Assert
-        with (
-            patch.object(validate_manifest, "MANIFEST_PATH", manifest_path),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_manifest.main()
+        with pytest.raises(SystemExit) as exc_info:
+            validate_manifest.main(manifest_path)
 
         assert exc_info.value.code == 1
 
@@ -615,11 +668,8 @@ class TestMainExitCodes:
         nonexistent_path = tmp_path / "nonexistent.json"
 
         # Act/Assert
-        with (
-            patch.object(validate_manifest, "MANIFEST_PATH", nonexistent_path),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_manifest.main()
+        with pytest.raises(SystemExit) as exc_info:
+            validate_manifest.main(nonexistent_path)
 
         assert exc_info.value.code == 1
 
@@ -643,11 +693,8 @@ class TestMainExitCodes:
         manifest_path.write_text(json.dumps(invalid_manifest))
 
         # Act/Assert
-        with (
-            patch.object(validate_manifest, "MANIFEST_PATH", manifest_path),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            validate_manifest.main()
+        with pytest.raises(SystemExit) as exc_info:
+            validate_manifest.main(manifest_path)
 
         assert exc_info.value.code == 1
 
@@ -658,7 +705,7 @@ class TestMainExitCodes:
 
 
 class TestHelperFunctions:
-    """Tests for internal helper functions."""
+    """Tests for the validate_required_fields helper function."""
 
     def test_validate_required_fields_all_present_returns_empty_list(self) -> None:
         """Entry with all required fields should return empty error list."""
@@ -689,38 +736,6 @@ class TestHelperFunctions:
         assert len(errors) == 1
         with check:
             assert "description" in errors[0]
-
-    def test_validate_dependency_references_all_valid_returns_empty_list(self) -> None:
-        """Valid dependencies should return empty error list."""
-        # Arrange
-        dependencies = ["skill-a", "skill-b"]
-        valid_names = {"skill-a", "skill-b", "skill-c"}
-
-        # Act
-        errors = validate_manifest._validate_dependency_references(
-            dependencies, valid_names, "test-command", "skill"
-        )
-
-        # Assert
-        assert errors == []
-
-    def test_validate_dependency_references_invalid_returns_errors(self) -> None:
-        """Invalid dependencies should return error list."""
-        # Arrange
-        dependencies = ["skill-a", "unknown-skill"]
-        valid_names = {"skill-a"}
-
-        # Act
-        errors = validate_manifest._validate_dependency_references(
-            dependencies, valid_names, "test-command", "skill"
-        )
-
-        # Assert
-        assert len(errors) == 1
-        with check:
-            assert "unknown skill" in errors[0]
-        with check:
-            assert "unknown-skill" in errors[0]
 
 
 # ============================================================================
@@ -803,7 +818,7 @@ class TestFullManifestValidation:
 
         # Assert - should have multiple errors
         with check:
-            assert len(errors) >= 4  # At least 4 distinct errors
+            assert len(errors) == 4
         with check:
             assert any("invalid category" in e for e in errors)
         with check:
