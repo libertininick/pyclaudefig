@@ -4,7 +4,7 @@ This module provides comprehensive tests for write_markdown_output.py, covering
 timestamp generation, file writing, CLI argument parsing, and error handling.
 """
 
-# ruff: noqa: S101 # this is a test module
+# ruff: noqa: S101
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ import argparse
 import io
 from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from pytest_check import check
@@ -28,50 +27,30 @@ from write_markdown_output import (
 )
 
 
-@pytest.fixture
-def sample_content() -> str:
-    """Sample markdown content for testing."""
-    return "# Test Plan\n\nThis is a test plan.\n"
+def test_generate_timestamp_format() -> None:
+    """Timestamp should match format YYYY-MM-DDTHHmmssZ."""
+    # Arrange
+    fixed_datetime = datetime(2026, 2, 10, 14, 30, 45, tzinfo=UTC)
 
+    # Act
+    timestamp = generate_timestamp(now=fixed_datetime)
 
-@pytest.fixture
-def sample_scope() -> str:
-    """Sample scope string for filename."""
-    return "test-plan"
-
-
-class TestGenerateTimestamp:
-    """Tests for generate_timestamp function."""
-
-    def test_generate_timestamp_format(self) -> None:
-        """Timestamp should match format YYYY-MM-DDTHHmmssZ."""
-        # Arrange
-        fixed_datetime = datetime(2026, 2, 10, 14, 30, 45, tzinfo=UTC)
-
-        # Act
-        with patch("write_markdown_output.datetime") as mock_datetime:
-            mock_datetime.now.return_value = fixed_datetime
-            timestamp = generate_timestamp()
-
-        # Assert
-        assert timestamp == "2026-02-10T143045Z"
+    # Assert
+    assert timestamp == "2026-02-10T143045Z"
 
 
 class TestWriteMarkdownOutput:
     """Tests for write_markdown_output function."""
 
-    def test_write_markdown_output_creates_file(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-        sample_content: str,
-    ) -> None:
+    def test_write_markdown_output_creates_file(self, tmp_path: Path) -> None:
         """File should be created in the output directory with correct content."""
         # Arrange
         output_dir = tmp_path / "outputs"
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        result_path = write_markdown_output(sample_scope, sample_content, output_dir)
+        result_path = write_markdown_output(scope, content, output_dir)
 
         # Assert
         with check:
@@ -79,42 +58,34 @@ class TestWriteMarkdownOutput:
         with check:
             assert result_path.is_file()
         with check:
-            assert result_path.read_text(encoding="utf-8") == sample_content
+            assert result_path.read_text(encoding="utf-8") == content
 
-    def test_write_markdown_output_filename_format(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-        sample_content: str,
-    ) -> None:
+    def test_write_markdown_output_filename_format(self, tmp_path: Path) -> None:
         """Filename should follow format {timestamp}-{scope}.md."""
         # Arrange
         output_dir = tmp_path / "outputs"
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
         fixed_datetime = datetime(2026, 2, 10, 14, 30, 45, tzinfo=UTC)
 
         # Act
-        with patch("write_markdown_output.datetime") as mock_datetime:
-            mock_datetime.now.return_value = fixed_datetime
-            result_path = write_markdown_output(
-                sample_scope, sample_content, output_dir
-            )
+        result_path = write_markdown_output(
+            scope, content, output_dir, now=fixed_datetime
+        )
 
         # Assert
         assert result_path.name == "2026-02-10T143045Z-test-plan.md"
 
-    def test_write_markdown_output_creates_directory(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-        sample_content: str,
-    ) -> None:
+    def test_write_markdown_output_creates_directory(self, tmp_path: Path) -> None:
         """Output directory should be created if it doesn't exist."""
         # Arrange
         output_dir = tmp_path / "nested" / "outputs"
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
         assert not output_dir.exists()
 
         # Act
-        result_path = write_markdown_output(sample_scope, sample_content, output_dir)
+        result_path = write_markdown_output(scope, content, output_dir)
 
         # Assert
         with check:
@@ -125,18 +96,17 @@ class TestWriteMarkdownOutput:
             assert result_path.exists()
 
     def test_write_markdown_output_with_existing_directory(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-        sample_content: str,
+        self, tmp_path: Path
     ) -> None:
         """Should work correctly when output directory already exists."""
         # Arrange
         output_dir = tmp_path / "outputs"
         output_dir.mkdir(parents=True)
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        result_path = write_markdown_output(sample_scope, sample_content, output_dir)
+        result_path = write_markdown_output(scope, content, output_dir)
 
         # Assert
         with check:
@@ -144,18 +114,15 @@ class TestWriteMarkdownOutput:
         with check:
             assert result_path.exists()
 
-    def test_write_markdown_output_accepts_string_path(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-        sample_content: str,
-    ) -> None:
+    def test_write_markdown_output_accepts_string_path(self, tmp_path: Path) -> None:
         """Should accept output_dir as string path."""
         # Arrange
         output_dir = str(tmp_path / "outputs")
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        result_path = write_markdown_output(sample_scope, sample_content, output_dir)
+        result_path = write_markdown_output(scope, content, output_dir)
 
         # Assert
         with check:
@@ -164,48 +131,68 @@ class TestWriteMarkdownOutput:
             assert isinstance(result_path, Path)
 
     def test_write_markdown_output_raises_on_directory_creation_failure(
-        self,
-        sample_scope: str,
-        sample_content: str,
+        self, tmp_path: Path
     ) -> None:
         """Should raise WriteError if directory creation fails."""
-        # Arrange
-        output_dir = Path("/invalid_root/directory")
+        # Arrange - create a file, then try to mkdir under it (always fails)
+        blocker = tmp_path / "blocker"
+        blocker.write_text("file")
+        output_dir = blocker / "subdir"
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act / Assert
         with pytest.raises(WriteError, match="Cannot create output directory"):
-            write_markdown_output(sample_scope, sample_content, output_dir)
+            write_markdown_output(scope, content, output_dir)
 
     def test_write_markdown_output_raises_on_file_write_failure(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-        sample_content: str,
+        self, tmp_path: Path
     ) -> None:
         """Should raise WriteError if file writing fails."""
-        # Arrange
+        # Arrange - make directory read-only to trigger write failure
         output_dir = tmp_path / "outputs"
-        output_dir.mkdir(parents=True)
+        output_dir.mkdir()
+        output_dir.chmod(0o555)
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
+
+        try:
+            # Act / Assert
+            with pytest.raises(WriteError, match="Cannot write file"):
+                write_markdown_output(scope, content, output_dir)
+        finally:
+            # Restore permissions so tmp_path cleanup works
+            output_dir.chmod(0o755)
+
+    def test_write_markdown_output_directory_error_preserves_cause(
+        self, tmp_path: Path
+    ) -> None:
+        """Should preserve the original OSError when directory creation fails."""
+        # Arrange - create a file, then try to mkdir under it
+        blocker = tmp_path / "blocker"
+        blocker.write_text("file")
+        output_dir = blocker / "subdir"
+        scope = "test"
+        content = "# Test"
 
         # Act / Assert
-        with (
-            patch("pathlib.Path.write_text", side_effect=OSError("Disk full")),
-            pytest.raises(WriteError, match="Cannot write file"),
-        ):
-            write_markdown_output(sample_scope, sample_content, output_dir)
+        with pytest.raises(WriteError) as exc_info:
+            write_markdown_output(scope, content, output_dir)
 
-    def test_write_markdown_output_with_empty_content(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-    ) -> None:
+        with check:
+            assert exc_info.value.__cause__ is not None
+        with check:
+            assert isinstance(exc_info.value.__cause__, OSError)
+
+    def test_write_markdown_output_with_empty_content(self, tmp_path: Path) -> None:
         """Should handle empty content correctly."""
         # Arrange
         output_dir = tmp_path / "outputs"
+        scope = "test-plan"
         empty_content = ""
 
         # Act
-        result_path = write_markdown_output(sample_scope, empty_content, output_dir)
+        result_path = write_markdown_output(scope, empty_content, output_dir)
 
         # Assert
         with check:
@@ -213,38 +200,44 @@ class TestWriteMarkdownOutput:
         with check:
             assert result_path.read_text(encoding="utf-8") == ""
 
-    def test_write_markdown_output_with_special_characters_in_scope(
-        self,
-        tmp_path: Path,
-        sample_content: str,
-    ) -> None:
-        """Should handle scope with various characters."""
+    def test_write_markdown_output_with_hyphenated_scope(self, tmp_path: Path) -> None:
+        """Should handle scope with hyphens."""
         # Arrange
         output_dir = tmp_path / "outputs"
-        scope_with_dashes = "my-complex-test-plan"
+        scope = "my-complex-test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        result_path = write_markdown_output(
-            scope_with_dashes,
-            sample_content,
-            output_dir,
-        )
+        result_path = write_markdown_output(scope, content, output_dir)
 
         # Assert
         assert "my-complex-test-plan" in result_path.name
 
-    def test_write_markdown_output_returns_absolute_path(
-        self,
-        tmp_path: Path,
-        sample_scope: str,
-        sample_content: str,
-    ) -> None:
+    def test_write_markdown_output_with_utf8_content(self, tmp_path: Path) -> None:
+        """Should handle UTF-8 non-ASCII content."""
+        # Arrange
+        output_dir = tmp_path / "outputs"
+        scope = "utf8-test"
+        content = "# Test\n\nAccented: café\nCJK: 你好世界\nEmoji: 🚀🎉\n"
+
+        # Act
+        result_path = write_markdown_output(scope, content, output_dir)
+
+        # Assert
+        with check:
+            assert result_path.exists()
+        with check:
+            assert result_path.read_text(encoding="utf-8") == content
+
+    def test_write_markdown_output_returns_absolute_path(self, tmp_path: Path) -> None:
         """Returned path should be absolute."""
         # Arrange
         output_dir = tmp_path / "outputs"
+        scope = "test-plan"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        result_path = write_markdown_output(sample_scope, sample_content, output_dir)
+        result_path = write_markdown_output(scope, content, output_dir)
 
         # Assert
         assert result_path.is_absolute()
@@ -261,26 +254,44 @@ class TestBuildArgumentParser:
         # Assert
         assert isinstance(parser, argparse.ArgumentParser)
 
-    def test_build_argument_parser_accepts_valid_args(self) -> None:
-        """Parser should accept valid argument combinations."""
+    @pytest.mark.parametrize(
+        ("args", "expected_scope", "expected_output_dir"),
+        [
+            # Short form
+            (
+                ["-s", "test-scope", "-o", "/fake/outputs"],
+                "test-scope",
+                "/fake/outputs",
+            ),
+            # Long form
+            (
+                ["--scope", "test-scope", "--output-dir", "/fake/outputs"],
+                "test-scope",
+                "/fake/outputs",
+            ),
+        ],
+    )
+    def test_build_argument_parser_accepts_valid_args(
+        self, args: list[str], expected_scope: str, expected_output_dir: str
+    ) -> None:
+        """Parser should accept both short and long form arguments."""
         # Arrange
         parser = _build_argument_parser()
-        valid_args = ["-s", "test-scope", "-o", "/tmp/outputs"]
 
         # Act
-        args = parser.parse_args(valid_args)
+        parsed_args = parser.parse_args(args)
 
         # Assert
         with check:
-            assert args.scope == "test-scope"
+            assert parsed_args.scope == expected_scope
         with check:
-            assert args.output_dir == "/tmp/outputs"
+            assert parsed_args.output_dir == expected_output_dir
 
     def test_build_argument_parser_requires_scope(self) -> None:
         """Parser should require --scope argument."""
         # Arrange
         parser = _build_argument_parser()
-        args_without_scope = ["-o", "/tmp/outputs"]
+        args_without_scope = ["-o", "/fake/outputs"]
 
         # Act / Assert
         with pytest.raises(SystemExit):
@@ -300,96 +311,85 @@ class TestBuildArgumentParser:
 class TestMain:
     """Tests for main CLI entry point."""
 
-    def test_main_success_returns_exit_success(
-        self,
-        tmp_path: Path,
-        sample_content: str,
-    ) -> None:
+    def test_main_success_returns_exit_success(self, tmp_path: Path) -> None:
         """Main should return EXIT_SUCCESS when file is written successfully."""
         # Arrange
         output_dir = tmp_path / "outputs"
-        test_args = [
-            "script.py",
-            "-s",
-            "test-scope",
-            "-o",
-            str(output_dir),
-        ]
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO(sample_content)),
-        ):
-            exit_code = main()
+        exit_code = main(
+            argv=["-s", "test-scope", "-o", str(output_dir)],
+            stdin=io.StringIO(content),
+        )
 
         # Assert
         assert exit_code == EXIT_SUCCESS
 
-    def test_main_write_error_returns_exit_write_error(
-        self,
-        sample_content: str,
-    ) -> None:
+    def test_main_write_error_returns_exit_write_error(self, tmp_path: Path) -> None:
         """Main should return EXIT_WRITE_ERROR when write_markdown_output raises."""
-        # Arrange
-        test_args = [
-            "script.py",
-            "-s",
-            "scope",
-            "-o",
-            "/invalid_root/dir",
-        ]
+        # Arrange - create a file blocker to trigger directory creation failure
+        blocker = tmp_path / "blocker"
+        blocker.write_text("file")
+        output_dir = blocker / "subdir"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO(sample_content)),
-        ):
-            exit_code = main()
+        exit_code = main(
+            argv=["-s", "scope", "-o", str(output_dir)],
+            stdin=io.StringIO(content),
+        )
 
         # Assert
         assert exit_code == EXIT_WRITE_ERROR
 
-    def test_main_usage_error_returns_exit_usage_error(
-        self,
+    def test_main_file_write_failure_returns_exit_write_error(
+        self, tmp_path: Path
     ) -> None:
+        """Main should return EXIT_WRITE_ERROR when file writing fails."""
+        # Arrange - make directory read-only to trigger write failure
+        output_dir = tmp_path / "outputs"
+        output_dir.mkdir()
+        output_dir.chmod(0o555)
+        content = "# Test Plan\n\nThis is a test plan.\n"
+
+        try:
+            # Act
+            exit_code = main(
+                argv=["-s", "test", "-o", str(output_dir)],
+                stdin=io.StringIO(content),
+            )
+
+            # Assert
+            assert exit_code == EXIT_WRITE_ERROR
+        finally:
+            # Restore permissions so tmp_path cleanup works
+            output_dir.chmod(0o755)
+
+    def test_main_usage_error_returns_exit_usage_error(self) -> None:
         """Main should return EXIT_USAGE_ERROR for invalid arguments."""
-        # Arrange
-        test_args = ["script.py"]  # Missing required arguments
+        # Arrange - empty argv means no required arguments provided
 
         # Act / Assert
         # argparse calls sys.exit() directly, so we catch SystemExit
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stderr"),
-            pytest.raises(SystemExit) as exc_info,
-        ):
-            main()
+        with pytest.raises(SystemExit) as exc_info:
+            main(argv=[])
+
         assert exc_info.value.code == EXIT_USAGE_ERROR
 
     def test_main_prints_success_message(
-        self,
-        tmp_path: Path,
-        sample_content: str,
-        capsys: pytest.CaptureFixture[str],
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Main should print success message with file path."""
         # Arrange
         output_dir = tmp_path / "outputs"
-        test_args = [
-            "script.py",
-            "-s",
-            "scope",
-            "-o",
-            str(output_dir),
-        ]
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO(sample_content)),
-        ):
-            main()
+        main(
+            argv=["-s", "scope", "-o", str(output_dir)],
+            stdin=io.StringIO(content),
+        )
 
         # Assert
         captured = capsys.readouterr()
@@ -399,26 +399,20 @@ class TestMain:
             assert str(output_dir) in captured.out
 
     def test_main_prints_error_message(
-        self,
-        sample_content: str,
-        capsys: pytest.CaptureFixture[str],
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Main should print error message to stderr on failure."""
-        # Arrange
-        test_args = [
-            "script.py",
-            "-s",
-            "scope",
-            "-o",
-            "/invalid_root/dir",
-        ]
+        # Arrange - create a file blocker to trigger directory creation failure
+        blocker = tmp_path / "blocker"
+        blocker.write_text("file")
+        output_dir = blocker / "subdir"
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO(sample_content)),
-        ):
-            main()
+        main(
+            argv=["-s", "scope", "-o", str(output_dir)],
+            stdin=io.StringIO(content),
+        )
 
         # Assert
         captured = capsys.readouterr()
@@ -427,37 +421,27 @@ class TestMain:
         with check:
             assert "Cannot create output directory" in captured.err
 
-    def test_main_writes_correct_content(
-        self,
-        tmp_path: Path,
-        sample_content: str,
-    ) -> None:
+    def test_main_writes_correct_content(self, tmp_path: Path) -> None:
         """Main should write the piped stdin content to the output file."""
         # Arrange
         output_dir = tmp_path / "outputs"
-        test_args = [
-            "script.py",
-            "-s",
-            "scope",
-            "-o",
-            str(output_dir),
-        ]
+        content = "# Test Plan\n\nThis is a test plan.\n"
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO(sample_content)),
-        ):
-            main()
+        main(
+            argv=["-s", "scope", "-o", str(output_dir)],
+            stdin=io.StringIO(content),
+        )
 
         # Assert
         written_files = list(output_dir.glob("*.md"))
-        assert len(written_files) == 1
-        assert written_files[0].read_text(encoding="utf-8") == sample_content
+        with check:
+            assert len(written_files) == 1
+        with check:
+            assert written_files[0].read_text(encoding="utf-8") == content
 
     def test_main_special_characters_writes_correct_content(
-        self,
-        tmp_path: Path,
+        self, tmp_path: Path
     ) -> None:
         """Main should preserve special characters from stdin end-to-end."""
         # Arrange
@@ -473,20 +457,12 @@ class TestMain:
             "```\n"
         )
         output_dir = tmp_path / "outputs"
-        test_args = [
-            "script.py",
-            "-s",
-            "special-chars-review",
-            "-o",
-            str(output_dir),
-        ]
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO(content)),
-        ):
-            exit_code = main()
+        exit_code = main(
+            argv=["-s", "special-chars-review", "-o", str(output_dir)],
+            stdin=io.StringIO(content),
+        )
 
         # Assert
         written_files = list(output_dir.glob("*.md"))
@@ -498,27 +474,17 @@ class TestMain:
             assert written_files[0].read_text(encoding="utf-8") == content
 
     def test_main_empty_stdin_returns_error(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Main should return EXIT_WRITE_ERROR when stdin is empty."""
         # Arrange
         output_dir = tmp_path / "outputs"
-        test_args = [
-            "script.py",
-            "-s",
-            "scope",
-            "-o",
-            str(output_dir),
-        ]
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO("")),
-        ):
-            exit_code = main()
+        exit_code = main(
+            argv=["-s", "scope", "-o", str(output_dir)],
+            stdin=io.StringIO(""),
+        )
 
         # Assert
         captured = capsys.readouterr()
@@ -528,27 +494,17 @@ class TestMain:
             assert "No content received from stdin" in captured.err
 
     def test_main_whitespace_only_stdin_returns_error(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Main should return EXIT_WRITE_ERROR when stdin is only whitespace."""
         # Arrange
         output_dir = tmp_path / "outputs"
-        test_args = [
-            "script.py",
-            "-s",
-            "scope",
-            "-o",
-            str(output_dir),
-        ]
 
         # Act
-        with (
-            patch("sys.argv", test_args),
-            patch("sys.stdin", new=io.StringIO("   \n\n  ")),
-        ):
-            exit_code = main()
+        exit_code = main(
+            argv=["-s", "scope", "-o", str(output_dir)],
+            stdin=io.StringIO("   \n\n  "),
+        )
 
         # Assert
         captured = capsys.readouterr()
@@ -558,22 +514,15 @@ class TestMain:
             assert "No content received from stdin" in captured.err
 
 
-class TestExitCodes:
-    """Tests for exit code constants."""
-
-    def test_exit_codes_are_distinct(self) -> None:
-        """All exit codes should have distinct values."""
-        exit_codes = {EXIT_SUCCESS, EXIT_WRITE_ERROR, EXIT_USAGE_ERROR}
-        assert len(exit_codes) == 3
-
-    def test_exit_success_is_zero(self) -> None:
-        """EXIT_SUCCESS should be 0."""
-        assert EXIT_SUCCESS == 0
-
-    def test_exit_write_error_is_one(self) -> None:
-        """EXIT_WRITE_ERROR should be 1."""
-        assert EXIT_WRITE_ERROR == 1
-
-    def test_exit_usage_error_is_two(self) -> None:
-        """EXIT_USAGE_ERROR should be 2."""
-        assert EXIT_USAGE_ERROR == 2
+@pytest.mark.parametrize(
+    ("exit_code", "expected_value"),
+    [
+        (EXIT_SUCCESS, 0),
+        (EXIT_WRITE_ERROR, 1),
+        (EXIT_USAGE_ERROR, 2),
+    ],
+)
+def test_exit_codes(exit_code: int, expected_value: int) -> None:
+    """Exit codes should have correct values and be distinct."""
+    # Act / Assert
+    assert exit_code == expected_value
