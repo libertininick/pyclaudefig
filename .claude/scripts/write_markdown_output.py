@@ -29,7 +29,7 @@ import argparse
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Final
+from typing import Final, TextIO
 
 # =============================================================================
 # Exit Codes
@@ -54,16 +54,23 @@ class WriteError(Exception):
 # =============================================================================
 
 
-def generate_timestamp() -> str:
+def generate_timestamp(*, now: datetime | None = None) -> str:
     """Generate UTC timestamp in ISO format for output filenames.
+
+    Args:
+        now (datetime | None): Optional fixed datetime for testing. If None,
+            uses current UTC time.
 
     Returns:
         str: Timestamp in format YYYY-MM-DDTHHmmssZ (e.g., '2026-02-02T025204Z')
     """
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H%M%SZ")
+    dt = now or datetime.now(UTC)
+    return dt.strftime("%Y-%m-%dT%H%M%SZ")
 
 
-def write_markdown_output(scope: str, content: str, output_dir: Path | str) -> Path:
+def write_markdown_output(
+    scope: str, content: str, output_dir: Path | str, *, now: datetime | None = None
+) -> Path:
     """Write content to a timestamped markdown file.
 
     Creates the output directory if it doesn't exist, generates a UTC timestamp,
@@ -74,6 +81,8 @@ def write_markdown_output(scope: str, content: str, output_dir: Path | str) -> P
             Should be lowercase with hyphens, no spaces.
         content (str): Markdown content to write.
         output_dir (Path | str): Output directory path. Will be created if it doesn't exist.
+        now (datetime | None): Optional fixed datetime for testing. If None,
+            uses current UTC time.
 
     Returns:
         Path: Full path to the created file.
@@ -90,7 +99,7 @@ def write_markdown_output(scope: str, content: str, output_dir: Path | str) -> P
         >>> path.name  # doctest: +SKIP
         '2026-02-02T025204Z-test-plan.md'
     """
-    timestamp = generate_timestamp()
+    timestamp = generate_timestamp(now=now)
     output_path = Path(output_dir)
 
     try:
@@ -114,17 +123,23 @@ def write_markdown_output(scope: str, content: str, output_dir: Path | str) -> P
 # =============================================================================
 
 
-def main() -> int:
+def main(*, argv: list[str] | None = None, stdin: TextIO | None = None) -> int:
     """Main entry point for the CLI.
+
+    Args:
+        argv (list[str] | None): CLI arguments (without script name). If None,
+            reads from sys.argv.
+        stdin (TextIO | None): Input stream. If None, reads from sys.stdin.
 
     Returns:
         int: Exit code (see module constants for values).
     """
     parser = _build_argument_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Read content from stdin
-    content = sys.stdin.read()
+    stream = stdin or sys.stdin
+    content = stream.read()
     if not content.strip():
         print("[ERROR] No content received from stdin", file=sys.stderr)
         return EXIT_WRITE_ERROR
