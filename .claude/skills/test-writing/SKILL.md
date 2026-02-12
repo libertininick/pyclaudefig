@@ -377,7 +377,7 @@ These are the **only** legitimate use cases. Even here, prefer alternatives when
 | Filesystem | Rarely | `tmp_path` (real fs) first; mock only for failure simulation |
 | Databases | Depends | Real test DB > in-memory SQLite > mock |
 | Internal functions | **No** | Redesign for testability (DI, pure functions) |
-| CLI main functions | **No** | `CliRunner` (click/typer), `subprocess` (argparse) |
+| CLI main functions | **No** | `typer.testing.CliRunner` (typer), `click.testing.CliRunner` (click), `subprocess` (argparse) |
 | Class methods | **No** | Use real instances with test configuration |
 | Error simulation at external boundaries | Yes | `side_effect` to raise exceptions (e.g., `ConnectionError`, `TimeoutError`) on mocked external boundaries; mock must still use `spec=` and target an external boundary |
 | Untestable mid-process boundary (integration tests) | Rare exception | `monkeypatch.setattr` only when no realistic input/output can be constructed and the boundary cannot be redesigned. *Example*: a function calls an external payment gateway mid-pipeline where the gateway has no sandbox mode, cannot run locally, and the call is embedded in a transaction that cannot be decomposed -- patch only that gateway client method |
@@ -503,7 +503,23 @@ def test_reads_api_key_from_env(monkeypatch):
 Use the framework's built-in test runner instead of mocking CLI internals.
 
 ```python
-# CORRECT -- click/typer CliRunner
+# CORRECT -- typer CliRunner (use for typer apps)
+from typer.testing import CliRunner
+
+def test_cli_greet():
+    runner = CliRunner()
+    result = runner.invoke(app, ["Camila", "--city", "Berlin"])
+    assert result.exit_code == 0
+    assert "Hello Camila" in result.output
+
+def test_cli_convert(tmp_path):
+    runner = CliRunner()
+    input_file = tmp_path / "input.csv"
+    input_file.write_text("a,b\n1,2\n")
+    result = runner.invoke(app, ["convert", str(input_file), "--format", "json"])
+    assert result.exit_code == 0
+
+# CORRECT -- click CliRunner (use for click apps)
 from click.testing import CliRunner
 
 def test_cli_convert():
@@ -524,6 +540,14 @@ def test_cli_version():
     assert result.returncode == 0
     assert "1.0.0" in result.stdout
 ```
+
+**Which runner to use:**
+
+| CLI Framework | Import | Invoke On |
+|---------------|--------|-----------|
+| Typer | `from typer.testing import CliRunner` | `app` (the `typer.Typer()` instance) |
+| Click | `from click.testing import CliRunner` | The click group/command function |
+| Argparse | `subprocess.run(...)` | The module/script entrypoint |
 
 | Test This (CLI) | Not This |
 |-----------------|----------|

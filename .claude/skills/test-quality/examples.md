@@ -533,6 +533,17 @@ def test_write_config(tmp_path):
 
 
 # CORRECT - CLI testing with CliRunner (no mocking)
+# Typer apps: use typer.testing.CliRunner
+from typer.testing import CliRunner
+
+def test_cli_convert(tmp_path):
+    runner = CliRunner()
+    input_file = tmp_path / "input.csv"
+    input_file.write_text("a,b\n1,2\n")
+    result = runner.invoke(app, ["convert", str(input_file), "--format", "json"])
+    assert result.exit_code == 0
+
+# Click apps: use click.testing.CliRunner
 from click.testing import CliRunner
 
 def test_cli_convert():
