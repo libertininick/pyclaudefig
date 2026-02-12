@@ -1,6 +1,5 @@
 ---
 name: pr-description
-version: 1.0.0
 description: Generate PR description from branch changes
 depends_on_skills:
   - pr-description-template

@@ -1,6 +1,5 @@
 ---
 name: add-framework
-version: 1.0.0
 description: Add a new approved framework to the frameworks skill
 depends_on_skills:
   - frameworks

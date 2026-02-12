@@ -1,6 +1,5 @@
 ---
 name: code-cleaner
-version: 1.1.0
 description: Cleans Python code by organizing structure, refactoring for readability, removing bloat, validating docstrings, and simplifying where possible.
 model: opus
 color: purple

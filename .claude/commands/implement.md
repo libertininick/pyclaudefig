@@ -1,6 +1,5 @@
 ---
 name: implement
-version: 1.3.0
 description: Execute plan phases using specialized agents
 depends_on_agents:
   - python-code-writer

@@ -63,7 +63,6 @@ _CATEGORY_DISPLAY_NAMES = {
 _DEFAULT_MANIFEST = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Claude Code configuration manifest",
-    "version": "1.1.0",
     "skills": [],
     "agents": [],
     "commands": [],
@@ -88,15 +87,11 @@ class SkillInfo:
     Attributes:
         name (str): Skill identifier used in manifest and file paths.
         description (str): Human-readable description of the skill's purpose.
-        version (str): Semantic version string.
-        user_invocable (bool): Whether users can invoke this skill directly.
         category (str): Category for grouping in CLAUDE.md.
     """
 
     name: str
     description: str
-    version: str = "1.0.0"
-    user_invocable: bool = True
     category: str = "conventions"
 
 
@@ -107,15 +102,11 @@ class AgentInfo:
     Attributes:
         name (str): Agent identifier used in manifest and file paths.
         description (str): Human-readable description of the agent's purpose.
-        model (str): Model to use (e.g., "opus", "sonnet").
-        version (str): Semantic version string.
         depends_on_skills (list[str]): List of skill names this agent requires.
     """
 
     name: str
     description: str
-    model: str
-    version: str = "1.0.0"
     depends_on_skills: list[str] = field(default_factory=list)
 
 
@@ -126,14 +117,12 @@ class CommandInfo:
     Attributes:
         name (str): Command identifier used in manifest and file paths.
         description (str): Human-readable description of the command's purpose.
-        version (str): Semantic version string.
         depends_on_agents (list[str]): List of agent names this command uses.
         depends_on_skills (list[str]): List of skill names this command uses.
     """
 
     name: str
     description: str
-    version: str = "1.0.0"
     depends_on_agents: list[str] = field(default_factory=list)
     depends_on_skills: list[str] = field(default_factory=list)
 
@@ -240,8 +229,6 @@ def scan_skills() -> dict[str, SkillInfo]:
         skills[name] = SkillInfo(
             name=name,
             description=description,
-            version=frontmatter.get("version", "1.0.0"),
-            user_invocable=frontmatter.get("user-invocable", True),
         )
 
     return skills
@@ -266,8 +253,6 @@ def scan_agents() -> dict[str, AgentInfo]:
         agents[name] = AgentInfo(
             name=name,
             description=frontmatter.get("description", ""),
-            model=frontmatter.get("model", "opus"),
-            version=frontmatter.get("version", "1.0.0"),
             depends_on_skills=frontmatter.get("depends_on_skills", []),
         )
 
@@ -293,7 +278,6 @@ def scan_commands() -> dict[str, CommandInfo]:
         commands[name] = CommandInfo(
             name=name,
             description=frontmatter.get("description", ""),
-            version=frontmatter.get("version", "1.0.0"),
             depends_on_agents=frontmatter.get("depends_on_agents", []),
             depends_on_skills=frontmatter.get("depends_on_skills", []),
         )
@@ -406,13 +390,20 @@ def update_claude_md(sections: dict[str, str], *, dry_run: bool = False) -> list
 
     for section_name, new_content in sections.items():
         # Match section content up to: subsection (###), separator (---), next section (##), or end
-        pattern = rf"(## {re.escape(section_name)}\n\n)(.*?)(\n\n###|\n\n---|\n\n## |\Z)"
+        pattern = (
+            rf"(## {re.escape(section_name)}\n\n)(.*?)(\n\n###|\n\n---|\n\n## |\Z)"
+        )
         match = re.search(pattern, content, re.DOTALL)
 
         if match:
             old_content = match.group(2).strip()
             if old_content != new_content.strip():
-                content = content[: match.start(2)] + new_content + "\n" + content[match.end(2) :]
+                content = (
+                    content[: match.start(2)]
+                    + new_content
+                    + "\n"
+                    + content[match.end(2) :]
+                )
                 changes.append(f"Updated CLAUDE.md section: {section_name}")
 
     if changes and not dry_run:
@@ -469,10 +460,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Synchronize Claude context files with skills, agents, and commands on disk."
     )
-    parser.add_argument("--dry-run", action="store_true", help="Preview changes without writing files")
-    parser.add_argument("--check", action="store_true", help="Exit with error code if files need updating")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed output")
-    parser.add_argument("--skip-bundles", action="store_true", help="Skip bundle regeneration")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview changes without writing files"
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Exit with error code if files need updating",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Show detailed output"
+    )
+    parser.add_argument(
+        "--skip-bundles", action="store_true", help="Skip bundle regeneration"
+    )
     args = parser.parse_args()
 
     all_changes: list[str] = []
@@ -581,13 +582,13 @@ def _sync_skills(
         if name in existing:
             new_skills.append(existing[name])
         else:
-            new_skills.append({
-                "name": info.name,
-                "category": info.category,
-                "description": info.description,
-                "user_invocable": info.user_invocable,
-                "version": info.version,
-            })
+            new_skills.append(
+                {
+                    "name": info.name,
+                    "category": info.category,
+                    "description": info.description,
+                }
+            )
             changes.append(f"Added skill: {name}")
 
     for name in existing:
@@ -618,13 +619,13 @@ def _sync_agents(
         if name in existing:
             new_agents.append(existing[name])
         else:
-            new_agents.append({
-                "name": info.name,
-                "description": info.description,
-                "model": info.model,
-                "version": info.version,
-                "depends_on_skills": info.depends_on_skills,
-            })
+            new_agents.append(
+                {
+                    "name": info.name,
+                    "description": info.description,
+                    "depends_on_skills": info.depends_on_skills,
+                }
+            )
             changes.append(f"Added agent: {name}")
 
     for name in existing:
@@ -658,7 +659,6 @@ def _sync_commands(
             entry: dict[str, Any] = {
                 "name": info.name,
                 "description": info.description,
-                "version": info.version,
             }
             if info.depends_on_agents:
                 entry["depends_on_agents"] = info.depends_on_agents
@@ -700,7 +700,9 @@ def _generate_commands_section(
         "|---------|---------|",
     ]
     for name in sorted(commands.keys()):
-        desc = manifest_commands.get(name, {}).get("description", commands[name].description)
+        desc = manifest_commands.get(name, {}).get(
+            "description", commands[name].description
+        )
         lines.append(f"| `/{name}` | {desc} |")
     return "\n".join(lines)
 
@@ -747,14 +749,18 @@ def _generate_bundles_section(agents: dict[str, AgentInfo]) -> str:
         "|-------|-------------|----------------|",
     ]
     for name in sorted(agents.keys()):
-        lines.append(f"| `{name}` | `bundles/{name}.md` | `bundles/{name}-compact.md` |")
-    lines.extend([
-        "",
-        "**Regenerate bundles** after modifying skills:",
-        "```bash",
-        "uv run python .claude/scripts/generate_bundles.py",
-        "```",
-    ])
+        lines.append(
+            f"| `{name}` | `bundles/{name}.md` | `bundles/{name}-compact.md` |"
+        )
+    lines.extend(
+        [
+            "",
+            "**Regenerate bundles** after modifying skills:",
+            "```bash",
+            "uv run python .claude/scripts/generate_bundles.py",
+            "```",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -773,7 +779,9 @@ def _generate_skills_section(
     """
     categories: dict[str, list[str]] = {cat: [] for cat in _SKILL_CATEGORIES}
 
-    skill_categories = {s["name"]: s.get("category", "conventions") for s in manifest.get("skills", [])}
+    skill_categories = {
+        s["name"]: s.get("category", "conventions") for s in manifest.get("skills", [])
+    }
 
     for name in sorted(skills.keys()):
         cat = skill_categories.get(name, "conventions")
@@ -790,10 +798,12 @@ def _generate_skills_section(
         if categories[cat_key]:
             lines.append(f"- **{cat_name}**: {', '.join(categories[cat_key])}")
 
-    lines.extend([
-        "",
-        "**Note**: Agents should load their context bundles (above) rather than invoking skills individually.",
-    ])
+    lines.extend(
+        [
+            "",
+            "**Note**: Agents should load their context bundles (above) rather than invoking skills individually.",
+        ]
+    )
     return "\n".join(lines)
 
 

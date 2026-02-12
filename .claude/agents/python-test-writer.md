@@ -1,6 +1,5 @@
 ---
 name: python-test-writer
-version: 1.3.0
 description: Creates comprehensive pytest test suites. Use when writing tests for new functions/classes, updating tests after logic changes, or creating edge case coverage.
 model: sonnet
 color: red

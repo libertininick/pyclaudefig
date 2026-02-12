@@ -1,6 +1,5 @@
 ---
 name: skill-template
-version: 1.1.0
 description: Skill structure, frontmatter options, and writing guidelines. Reference for creating Claude Code skills.
 user-invocable: true
 ---
@@ -179,9 +178,7 @@ Add an entry to `.claude/manifest.json` in the `skills` array:
 {
   "name": "my-skill",
   "category": "conventions",
-  "description": "Short description for auto-loading decisions",
-  "user_invocable": true,
-  "version": "1.0.0"
+  "description": "Short description for auto-loading decisions"
 }
 ```
 
@@ -190,8 +187,6 @@ Add an entry to `.claude/manifest.json` in the `skills` array:
 | `name` | Must match directory name |
 | `category` | One of: `conventions`, `assessment`, `templates`, `utilities` |
 | `description` | Brief description (used by manifest consumers) |
-| `user_invocable` | `true` if callable via `/skill-name`, `false` for reference-only |
-| `version` | Semantic version, typically `1.0.0` for new skills |
 
 ### 2. Update CLAUDE.md Skills Section
 

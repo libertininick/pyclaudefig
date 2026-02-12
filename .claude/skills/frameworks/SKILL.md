@@ -1,6 +1,5 @@
 ---
 name: frameworks
-version: 1.0.0
 description: Approved frameworks and libraries for this codebase. Apply when selecting libraries, checking if a framework is approved, or fetching documentation for approved tools.
 user-invocable: false
 ---

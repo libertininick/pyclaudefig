@@ -1,6 +1,5 @@
 ---
 name: run-python-safely
-version: 1.1.0
 description: Execute Python code safely by checking for dangerous operations first. ALWAYS use when running agent-generated Python code.
 argument-hint: <-c "code" | -f file.py>
 ---

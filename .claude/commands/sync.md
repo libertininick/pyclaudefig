@@ -1,6 +1,5 @@
 ---
 name: sync
-version: 1.0.0
 description: Sync Claude context files with skills, agents, and commands on disk
 ---
 
@@ -93,43 +92,40 @@ uv run python .claude/scripts/sync_context.py --check
 ```yaml
 ---
 name: skill-name
-version: 1.0.0
 description: What the skill does
 user-invocable: true|false
 ---
 ```
 
-Required: `description`
-Optional: `name` (defaults to directory name), `version`, `user-invocable`
+Synced to manifest: `description`, `category`
+Not synced (used by Claude Code runtime): `user-invocable`, `name`
 
 ### Agents (.claude/agents/*.md)
 
 ```yaml
 ---
 name: agent-name
-version: 1.0.0
 description: What the agent does
 model: opus|sonnet
 ---
 ```
 
-Required: `description`, `model`
-Optional: `name` (defaults to filename), `version`
+Synced to manifest: `description`, `depends_on_skills`
+Not synced (used by Claude Code runtime): `model`, `name`
 
 ### Commands (.claude/commands/*.md)
 
 ```yaml
 ---
 name: command-name
-version: 1.0.0
 description: What the command does
 depends_on_agents: [agent1, agent2]
 depends_on_skills: [skill1, skill2]
 ---
 ```
 
-Required: `description`
-Optional: `name`, `version`, `depends_on_agents`, `depends_on_skills`
+Synced to manifest: `description`, `depends_on_agents`, `depends_on_skills`
+Not synced: `name` (defaults to filename)
 
 ## Script Options
 

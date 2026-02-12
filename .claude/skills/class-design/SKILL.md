@@ -1,6 +1,5 @@
 ---
 name: class-design
-version: 1.1.0
 description: Python class design conventions for this codebase. Apply when writing or reviewing classes including interfaces, inheritance, composition, and attribute access.
 user-invocable: false
 layers:

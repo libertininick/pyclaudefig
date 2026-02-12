@@ -1,6 +1,5 @@
 ---
 name: maintainability
-version: 1.0.0
 description: Maintainability assessment criteria for code review. Apply when evaluating code for readability, change tolerance, hidden assumptions, and debuggability.
 user-invocable: false
 ---

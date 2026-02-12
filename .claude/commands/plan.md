@@ -1,6 +1,5 @@
 ---
 name: plan
-version: 1.0.0
 description: Create comprehensive implementation plan before coding
 depends_on_agents:
   - planner

@@ -1,6 +1,5 @@
 ---
 name: review-template
-version: 1.0.0
 description: Code review output templates with format specifications and severity guidance. Use when generating code reviews. Provides the review structure and quality bar.
 user-invocable: false
 ---

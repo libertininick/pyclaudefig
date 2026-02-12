@@ -1,6 +1,5 @@
 ---
 name: plan-template
-version: 1.1.0
 description: Implementation plan templates with format specifications, validation criteria, and examples. Use when creating plans for features, bug fixes, or refactoring. Provides the complete plan structure and writing guidance.
 argument-hint: "[template-type: bugfix | refactor | feature | format | help]"
 allowed-tools: Read, Glob

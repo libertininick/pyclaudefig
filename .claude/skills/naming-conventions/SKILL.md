@@ -1,6 +1,5 @@
 ---
 name: naming-conventions
-version: 1.0.0
 description: Python naming conventions for this codebase. Apply when writing or reviewing Python code including functions, classes, variables, and constants.
 user-invocable: false
 ---

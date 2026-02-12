@@ -147,25 +147,27 @@ class CodeSource:
 # Dynamic Import System: importlib, builtins
 #   - Can dynamically import blocked modules or access blocked builtins
 
-BLOCKED_IMPORTS: Final[frozenset[str]] = frozenset({
-    "os",
-    "sys",
-    "subprocess",
-    "shutil",
-    "socket",
-    "requests",
-    "httpx",
-    "urllib",
-    "ftplib",
-    "pickle",
-    "shelve",
-    "marshal",
-    "ctypes",
-    "multiprocessing",
-    "threading",
-    "importlib",
-    "builtins",
-})
+BLOCKED_IMPORTS: Final[frozenset[str]] = frozenset(
+    {
+        "os",
+        "sys",
+        "subprocess",
+        "shutil",
+        "socket",
+        "requests",
+        "httpx",
+        "urllib",
+        "ftplib",
+        "pickle",
+        "shelve",
+        "marshal",
+        "ctypes",
+        "multiprocessing",
+        "threading",
+        "importlib",
+        "builtins",
+    }
+)
 
 _IMPORT_DETAILS: Final[dict[str, str]] = {
     "os": "file system and process operations",
@@ -209,21 +211,23 @@ _IMPORT_DETAILS: Final[dict[str, str]] = {
 #   - breakpoint: Drops into debugger (blocks execution)
 #   - input: Blocks waiting for user input (hangs agent execution)
 
-BLOCKED_BUILTINS: Final[frozenset[str]] = frozenset({
-    "eval",
-    "exec",
-    "compile",
-    "open",
-    "__import__",
-    "getattr",
-    "setattr",
-    "delattr",
-    "globals",
-    "locals",
-    "vars",
-    "breakpoint",
-    "input",
-})
+BLOCKED_BUILTINS: Final[frozenset[str]] = frozenset(
+    {
+        "eval",
+        "exec",
+        "compile",
+        "open",
+        "__import__",
+        "getattr",
+        "setattr",
+        "delattr",
+        "globals",
+        "locals",
+        "vars",
+        "breakpoint",
+        "input",
+    }
+)
 
 _BUILTIN_DETAILS: Final[dict[str, str]] = {
     "eval": "arbitrary code execution",
@@ -258,22 +262,24 @@ _BUILTIN_DETAILS: Final[dict[str, str]] = {
 # Links: symlink_to, hardlink_to, link_to
 # Permissions: chmod, lchmod
 
-BLOCKED_METHODS: Final[frozenset[str]] = frozenset({
-    "write_text",
-    "write_bytes",
-    "touch",
-    "mkdir",
-    "rmdir",
-    "unlink",
-    "rename",
-    "replace",
-    "symlink_to",
-    "hardlink_to",
-    "link_to",
-    "chmod",
-    "lchmod",
-    "rmtree",
-})
+BLOCKED_METHODS: Final[frozenset[str]] = frozenset(
+    {
+        "write_text",
+        "write_bytes",
+        "touch",
+        "mkdir",
+        "rmdir",
+        "unlink",
+        "rename",
+        "replace",
+        "symlink_to",
+        "hardlink_to",
+        "link_to",
+        "chmod",
+        "lchmod",
+        "rmtree",
+    }
+)
 
 _METHOD_DETAILS: Final[dict[str, str]] = {
     "write_text": "file write operation",
@@ -409,7 +415,10 @@ def format_issues(issues: list[SafetyIssue]) -> str:
           - Import: os (file system operations)
           - Builtin: eval (arbitrary code execution)
     """
-    return "\n".join(f"  - {issue.category.value.capitalize()}: {issue.name} ({issue.detail})" for issue in issues)
+    return "\n".join(
+        f"  - {issue.category.value.capitalize()}: {issue.name} ({issue.detail})"
+        for issue in issues
+    )
 
 
 # =============================================================================
@@ -523,7 +532,9 @@ def _get_alias_issues_from_node(node: ast.AST) -> Iterator[SafetyIssue]:
 
 def _get_alias_issues_from_assign(node: ast.Assign) -> Iterator[SafetyIssue]:
     """Yield alias issues from an Assign node."""
-    if isinstance(node.value, ast.Name) and (issue := _create_builtin_alias_issue(node.value.id)):
+    if isinstance(node.value, ast.Name) and (
+        issue := _create_builtin_alias_issue(node.value.id)
+    ):
         # Simple assignment: evil = eval
         yield issue
     elif isinstance(node.value, ast.Tuple):
@@ -577,11 +588,15 @@ def _get_method_issues_from_node(node: ast.AST) -> Iterator[SafetyIssue]:
         if issue := _create_method_issue(node.func.attr):
             yield issue
     # Method references: delete_func = path.unlink
-    elif isinstance(node, ast.Attribute) and (issue := _create_method_issue(node.attr, is_reference=True)):
+    elif isinstance(node, ast.Attribute) and (
+        issue := _create_method_issue(node.attr, is_reference=True)
+    ):
         yield issue
 
 
-def _create_method_issue(method: str, *, is_reference: bool = False) -> SafetyIssue | None:
+def _create_method_issue(
+    method: str, *, is_reference: bool = False
+) -> SafetyIssue | None:
     """Create a method issue if blocked."""
     if method not in BLOCKED_METHODS:
         return None

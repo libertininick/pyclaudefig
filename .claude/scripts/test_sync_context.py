@@ -54,7 +54,9 @@ def _write_skill(skill_dir: Path, frontmatter: str, body: str = "") -> None:
     (skill_dir / "SKILL.md").write_text(content)
 
 
-def _write_md_file(directory: Path, filename: str, frontmatter: str, body: str = "") -> None:
+def _write_md_file(
+    directory: Path, filename: str, frontmatter: str, body: str = ""
+) -> None:
     """Write a markdown file with frontmatter into the given directory.
 
     Args:
@@ -87,7 +89,9 @@ class TestParseValue:
             ("FALSE", False),
         ],
     )
-    def test_parse_value_boolean_strings_returns_bool(self, *, input_value: str, expected: bool) -> None:
+    def test_parse_value_boolean_strings_returns_bool(
+        self, *, input_value: str, expected: bool
+    ) -> None:
         """Boolean strings should be converted to Python bool regardless of case.
 
         Args:
@@ -157,7 +161,9 @@ class TestParseValue:
             (" true ", " true "),
         ],
     )
-    def test_parse_value_non_boolean_lookalikes_returns_string(self, *, input_value: str, expected: str) -> None:
+    def test_parse_value_non_boolean_lookalikes_returns_string(
+        self, *, input_value: str, expected: str
+    ) -> None:
         """Empty string and whitespace-padded booleans should pass through as strings.
 
         Args:
@@ -182,7 +188,7 @@ class TestParseFrontmatter:
     def test_parse_frontmatter_valid_content_returns_metadata_and_body(self) -> None:
         """Content with valid frontmatter should return parsed dict and remaining body."""
         # Arrange
-        content = "---\nname: my-skill\nversion: 1.0.0\n---\n# Body content"
+        content = "---\nname: my-skill\ndescription: A test skill\n---\n# Body content"
 
         # Act
         frontmatter, body = parse_frontmatter(content)
@@ -191,7 +197,7 @@ class TestParseFrontmatter:
         with check:
             assert frontmatter["name"] == "my-skill"
         with check:
-            assert frontmatter["version"] == "1.0.0"
+            assert frontmatter["description"] == "A test skill"
         with check:
             assert body == "# Body content"
 
@@ -355,7 +361,9 @@ class TestScanSkills:
     """Tests for scan_skills that discovers skill metadata from the filesystem."""
 
     @pytest.fixture(autouse=True)
-    def _patch_skills_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def _patch_skills_dir(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Patch SKILLS_DIR to tmp_path for all tests in this class.
 
         Args:
@@ -364,7 +372,9 @@ class TestScanSkills:
         """
         monkeypatch.setattr(sync_context, "SKILLS_DIR", tmp_path)
 
-    def test_scan_skills_valid_directory_returns_skill_info(self, tmp_path: Path) -> None:
+    def test_scan_skills_valid_directory_returns_skill_info(
+        self, tmp_path: Path
+    ) -> None:
         """Directory with valid SKILL.md files should return populated SkillInfo dict.
 
         Args:
@@ -373,7 +383,7 @@ class TestScanSkills:
         # Arrange
         _write_skill(
             tmp_path / "my-skill",
-            "name: my-skill\ndescription: A test skill\nversion: 2.0.0\nuser-invocable: false",
+            "name: my-skill\ndescription: A test skill",
         )
 
         # Act
@@ -386,10 +396,6 @@ class TestScanSkills:
             assert skills["my-skill"].name == "my-skill"
         with check:
             assert skills["my-skill"].description == "A test skill"
-        with check:
-            assert skills["my-skill"].version == "2.0.0"
-        with check:
-            assert skills["my-skill"].user_invocable is False
 
     def test_scan_skills_multiple_skills_returns_all(self, tmp_path: Path) -> None:
         """Directory with multiple skill subdirs should return all of them.
@@ -458,7 +464,9 @@ class TestScanSkills:
         with check:
             assert "valid-skill" in skills
 
-    def test_scan_skills_no_description_falls_back_to_content_line(self, tmp_path: Path) -> None:
+    def test_scan_skills_no_description_falls_back_to_content_line(
+        self, tmp_path: Path
+    ) -> None:
         """Skill without description frontmatter should use first non-header content line.
 
         The fallback logic iterates all lines of the file (including frontmatter).
@@ -472,7 +480,7 @@ class TestScanSkills:
         # lines like "name: no-desc" are candidates (they don't start with # or -)
         _write_skill(
             tmp_path / "no-desc",
-            "name: no-desc\nversion: 1.0.0",
+            "name: no-desc",
             body="\n# Heading\n\nThis is the fallback description line.",
         )
 
@@ -482,7 +490,9 @@ class TestScanSkills:
         # Assert - first non-empty line not starting with # or - is "name: no-desc"
         assert skills["no-desc"].description == "name: no-desc"
 
-    def test_scan_skills_no_description_body_only_text_returns_body_line(self, tmp_path: Path) -> None:
+    def test_scan_skills_no_description_body_only_text_returns_body_line(
+        self, tmp_path: Path
+    ) -> None:
         """Skill without description and with body text should pick up a content line.
 
         When the frontmatter has no description and the file body has plain text
@@ -511,7 +521,9 @@ class TestScanSkills:
             tmp_path (Path): Pytest temporary directory fixture.
         """
         # Arrange
-        _write_skill(tmp_path / "dir-name-skill", "description: A skill without a name key")
+        _write_skill(
+            tmp_path / "dir-name-skill", "description: A skill without a name key"
+        )
 
         # Act
         skills = scan_skills()
@@ -519,7 +531,9 @@ class TestScanSkills:
         # Assert
         assert "dir-name-skill" in skills
 
-    def test_scan_skills_does_not_propagate_category_from_frontmatter(self, tmp_path: Path) -> None:
+    def test_scan_skills_does_not_propagate_category_from_frontmatter(
+        self, tmp_path: Path
+    ) -> None:
         """Category in SKILL.md frontmatter should be ignored; always defaults to 'conventions'.
 
         The manifest is the source of truth for skill categories, not the SKILL.md file.
@@ -539,7 +553,9 @@ class TestScanSkills:
         # Assert - category should always be the dataclass default, not frontmatter value
         assert skills["my-skill"].category == "conventions"
 
-    def test_scan_skills_file_in_skills_dir_not_subdir_is_skipped(self, tmp_path: Path) -> None:
+    def test_scan_skills_file_in_skills_dir_not_subdir_is_skipped(
+        self, tmp_path: Path
+    ) -> None:
         """Plain files in the skills directory (not subdirs) should be skipped.
 
         Args:
@@ -563,7 +579,9 @@ class TestScanSkills:
 class TestScanAgents:
     """Tests for scan_agents that discovers agent metadata from the filesystem."""
 
-    def test_scan_agents_valid_directory_returns_agent_info(self, tmp_path: Path) -> None:
+    def test_scan_agents_valid_directory_returns_agent_info(
+        self, tmp_path: Path
+    ) -> None:
         """Directory with valid agent markdown files should return populated AgentInfo dict.
 
         Args:
@@ -573,7 +591,7 @@ class TestScanAgents:
         _write_md_file(
             tmp_path,
             "my-agent.md",
-            "name: my-agent\ndescription: Test agent\nmodel: sonnet\nversion: 1.1.0",
+            "name: my-agent\ndescription: Test agent",
         )
 
         # Act
@@ -585,12 +603,10 @@ class TestScanAgents:
             assert "my-agent" in agents
         with check:
             assert agents["my-agent"].description == "Test agent"
-        with check:
-            assert agents["my-agent"].model == "sonnet"
-        with check:
-            assert agents["my-agent"].version == "1.1.0"
 
-    def test_scan_agents_empty_directory_returns_empty_dict(self, tmp_path: Path) -> None:
+    def test_scan_agents_empty_directory_returns_empty_dict(
+        self, tmp_path: Path
+    ) -> None:
         """Empty agents directory should return empty dict.
 
         Args:
@@ -603,7 +619,9 @@ class TestScanAgents:
         # Assert
         assert agents == {}
 
-    def test_scan_agents_nonexistent_directory_returns_empty_dict(self, tmp_path: Path) -> None:
+    def test_scan_agents_nonexistent_directory_returns_empty_dict(
+        self, tmp_path: Path
+    ) -> None:
         """Non-existent agents directory should return empty dict.
 
         Args:
@@ -626,7 +644,7 @@ class TestScanAgents:
             tmp_path (Path): Pytest temporary directory fixture.
         """
         # Arrange
-        _write_md_file(tmp_path, "code-writer.md", "description: Writes code\nmodel: opus")
+        _write_md_file(tmp_path, "code-writer.md", "description: Writes code")
 
         # Act
         with patch.object(sync_context, "AGENTS_DIR", tmp_path):
@@ -642,7 +660,9 @@ class TestScanAgents:
             tmp_path (Path): Pytest temporary directory fixture.
         """
         # Arrange
-        _write_md_file(tmp_path, "valid-agent.md", "name: valid-agent\ndescription: Valid\nmodel: opus")
+        _write_md_file(
+            tmp_path, "valid-agent.md", "name: valid-agent\ndescription: Valid"
+        )
         (tmp_path / "notes.txt").write_text("not an agent")
         (tmp_path / "config.json").write_text("{}")
 
@@ -656,7 +676,9 @@ class TestScanAgents:
         with check:
             assert "valid-agent" in agents
 
-    def test_scan_agents_with_depends_on_skills_returns_list(self, tmp_path: Path) -> None:
+    def test_scan_agents_with_depends_on_skills_returns_list(
+        self, tmp_path: Path
+    ) -> None:
         """Agent with depends_on_skills should parse them into a list.
 
         Args:
@@ -666,7 +688,7 @@ class TestScanAgents:
         _write_md_file(
             tmp_path,
             "my-agent.md",
-            "name: my-agent\ndescription: Agent\nmodel: opus\ndepends_on_skills: [skill-a, skill-b]",
+            "name: my-agent\ndescription: Agent\ndepends_on_skills: [skill-a, skill-b]",
         )
 
         # Act
@@ -685,7 +707,9 @@ class TestScanAgents:
 class TestScanCommands:
     """Tests for scan_commands that discovers command metadata from the filesystem."""
 
-    def test_scan_commands_valid_directory_returns_command_info(self, tmp_path: Path) -> None:
+    def test_scan_commands_valid_directory_returns_command_info(
+        self, tmp_path: Path
+    ) -> None:
         """Directory with valid command markdown files should return populated CommandInfo dict.
 
         Args:
@@ -695,7 +719,7 @@ class TestScanCommands:
         _write_md_file(
             tmp_path,
             "clean.md",
-            "name: clean\ndescription: Clean code\nversion: 1.2.0",
+            "name: clean\ndescription: Clean code",
         )
 
         # Act
@@ -707,10 +731,10 @@ class TestScanCommands:
             assert "clean" in commands
         with check:
             assert commands["clean"].description == "Clean code"
-        with check:
-            assert commands["clean"].version == "1.2.0"
 
-    def test_scan_commands_empty_directory_returns_empty_dict(self, tmp_path: Path) -> None:
+    def test_scan_commands_empty_directory_returns_empty_dict(
+        self, tmp_path: Path
+    ) -> None:
         """Empty commands directory should return empty dict.
 
         Args:
@@ -723,7 +747,9 @@ class TestScanCommands:
         # Assert
         assert commands == {}
 
-    def test_scan_commands_nonexistent_directory_returns_empty_dict(self, tmp_path: Path) -> None:
+    def test_scan_commands_nonexistent_directory_returns_empty_dict(
+        self, tmp_path: Path
+    ) -> None:
         """Non-existent commands directory should return empty dict.
 
         Args:
@@ -776,7 +802,9 @@ class TestScanCommands:
         with check:
             assert "valid-cmd" in commands
 
-    def test_scan_commands_with_dependencies_returns_lists(self, tmp_path: Path) -> None:
+    def test_scan_commands_with_dependencies_returns_lists(
+        self, tmp_path: Path
+    ) -> None:
         """Command with depends_on_agents and depends_on_skills should parse both lists.
 
         Args:
@@ -808,7 +836,9 @@ class TestScanCommands:
 class TestLoadManifest:
     """Tests for load_manifest that reads manifest.json from disk."""
 
-    def test_load_manifest_existing_file_returns_parsed_json(self, tmp_path: Path) -> None:
+    def test_load_manifest_existing_file_returns_parsed_json(
+        self, tmp_path: Path
+    ) -> None:
         """Existing valid manifest file should return parsed JSON dict.
 
         Args:
@@ -816,7 +846,7 @@ class TestLoadManifest:
         """
         # Arrange
         manifest_path = tmp_path / "manifest.json"
-        manifest_data = {"version": "1.0.0", "skills": [{"name": "test"}]}
+        manifest_data = {"skills": [{"name": "test"}]}
         manifest_path.write_text(json.dumps(manifest_data))
 
         # Act
@@ -826,7 +856,9 @@ class TestLoadManifest:
         # Assert
         assert loaded == manifest_data
 
-    def test_load_manifest_nonexistent_file_returns_default(self, tmp_path: Path) -> None:
+    def test_load_manifest_nonexistent_file_returns_default(
+        self, tmp_path: Path
+    ) -> None:
         """Non-existent manifest file should return the default manifest structure.
 
         Args:
@@ -849,7 +881,9 @@ class TestLoadManifest:
         with check:
             assert loaded["skills"] == []
 
-    def test_load_manifest_default_not_corrupted_after_mutation(self, tmp_path: Path) -> None:
+    def test_load_manifest_default_not_corrupted_after_mutation(
+        self, tmp_path: Path
+    ) -> None:
         """Mutating a loaded default manifest must not corrupt subsequent loads.
 
         load_manifest uses deepcopy so nested lists (skills, agents, commands)
@@ -909,7 +943,9 @@ class TestUpdateManifest:
         """Removing a skill no longer on disk should appear in the changes list."""
         # Arrange
         manifest: dict[str, Any] = {
-            "skills": [{"name": "old-skill", "description": "Old", "category": "conventions", "version": "1.0.0"}],
+            "skills": [
+                {"name": "old-skill", "description": "Old", "category": "conventions"}
+            ],
             "agents": [],
             "commands": [],
         }
@@ -930,18 +966,25 @@ class TestUpdateManifest:
             "name": "my-skill",
             "description": "Manifest description (source of truth)",
             "category": "conventions",
-            "version": "1.0.0",
-            "user_invocable": True,
         }
-        manifest: dict[str, Any] = {"skills": [existing_entry], "agents": [], "commands": []}
-        skills = {"my-skill": SkillInfo(name="my-skill", description="Disk description")}
+        manifest: dict[str, Any] = {
+            "skills": [existing_entry],
+            "agents": [],
+            "commands": [],
+        }
+        skills = {
+            "my-skill": SkillInfo(name="my-skill", description="Disk description")
+        }
 
         # Act
         updated, changes = update_manifest(manifest, skills, {}, {})
 
         # Assert
         with check:
-            assert updated["skills"][0]["description"] == "Manifest description (source of truth)"
+            assert (
+                updated["skills"][0]["description"]
+                == "Manifest description (source of truth)"
+            )
         with check:
             assert changes == []
 
@@ -949,7 +992,7 @@ class TestUpdateManifest:
         """Adding a new agent should appear in the changes list."""
         # Arrange
         manifest: dict[str, Any] = {"skills": [], "agents": [], "commands": []}
-        agents = {"new-agent": AgentInfo(name="new-agent", description="Agent", model="opus")}
+        agents = {"new-agent": AgentInfo(name="new-agent", description="Agent")}
 
         # Act
         updated, changes = update_manifest(manifest, {}, agents, {})
@@ -965,7 +1008,7 @@ class TestUpdateManifest:
         # Arrange
         manifest: dict[str, Any] = {
             "skills": [],
-            "agents": [{"name": "old-agent", "description": "Old", "model": "opus", "version": "1.0.0"}],
+            "agents": [{"name": "old-agent", "description": "Old"}],
             "commands": [],
         }
 
@@ -999,7 +1042,7 @@ class TestUpdateManifest:
         manifest: dict[str, Any] = {
             "skills": [],
             "agents": [],
-            "commands": [{"name": "old-cmd", "description": "Old", "version": "1.0.0"}],
+            "commands": [{"name": "old-cmd", "description": "Old"}],
         }
 
         # Act
@@ -1015,12 +1058,12 @@ class TestUpdateManifest:
         """When disk matches manifest, changes list should be empty."""
         # Arrange
         manifest: dict[str, Any] = {
-            "skills": [{"name": "s1", "description": "S1", "category": "conventions", "version": "1.0.0"}],
-            "agents": [{"name": "a1", "description": "A1", "model": "opus", "version": "1.0.0"}],
-            "commands": [{"name": "c1", "description": "C1", "version": "1.0.0"}],
+            "skills": [{"name": "s1", "description": "S1", "category": "conventions"}],
+            "agents": [{"name": "a1", "description": "A1"}],
+            "commands": [{"name": "c1", "description": "C1"}],
         }
         skills = {"s1": SkillInfo(name="s1", description="S1")}
-        agents = {"a1": AgentInfo(name="a1", description="A1", model="opus")}
+        agents = {"a1": AgentInfo(name="a1", description="A1")}
         commands = {"c1": CommandInfo(name="c1", description="C1")}
 
         # Act
@@ -1036,7 +1079,9 @@ class TestUpdateManifest:
         """Adding one skill while removing another in a single call should report both changes."""
         # Arrange
         manifest: dict[str, Any] = {
-            "skills": [{"name": "old-skill", "description": "Old", "category": "conventions", "version": "1.0.0"}],
+            "skills": [
+                {"name": "old-skill", "description": "Old", "category": "conventions"}
+            ],
             "agents": [],
             "commands": [],
         }
@@ -1124,11 +1169,11 @@ class TestGenerateClaudeMdSections:
         # Arrange
         manifest: dict[str, Any] = {
             "skills": [{"name": "test-skill", "category": "conventions"}],
-            "agents": [{"name": "test-agent", "description": "Agent", "model": "opus"}],
+            "agents": [{"name": "test-agent", "description": "Agent"}],
             "commands": [{"name": "test-cmd", "description": "Command"}],
         }
         skills = {"test-skill": SkillInfo(name="test-skill", description="A skill")}
-        agents = {"test-agent": AgentInfo(name="test-agent", description="Agent", model="opus")}
+        agents = {"test-agent": AgentInfo(name="test-agent", description="Agent")}
         commands = {"test-cmd": CommandInfo(name="test-cmd", description="Command")}
 
         # Act
@@ -1207,11 +1252,11 @@ class TestGenerateAgentsSection:
     """Tests for _generate_agents_section that produces the Agents table."""
 
     def test_generate_agents_section_table_format(self) -> None:
-        """Agents section should produce a valid markdown table with model display."""
+        """Agents section should produce a valid markdown table."""
         # Arrange
         agents = {
-            "code-writer": AgentInfo(name="code-writer", description="Writes code", model="opus"),
-            "reviewer": AgentInfo(name="reviewer", description="Reviews code", model="sonnet"),
+            "code-writer": AgentInfo(name="code-writer", description="Writes code"),
+            "reviewer": AgentInfo(name="reviewer", description="Reviews code"),
         }
         manifest: dict[str, Any] = {"agents": []}
 
@@ -1229,7 +1274,7 @@ class TestGenerateAgentsSection:
     def test_generate_agents_section_uses_manifest_description(self) -> None:
         """Agents section should prefer manifest descriptions over disk descriptions."""
         # Arrange
-        agents = {"writer": AgentInfo(name="writer", description="Disk", model="opus")}
+        agents = {"writer": AgentInfo(name="writer", description="Disk")}
         manifest: dict[str, Any] = {
             "agents": [{"name": "writer", "description": "Manifest agent desc"}],
         }
@@ -1253,7 +1298,7 @@ class TestGenerateBundlesSection:
         """Bundles section should produce a table with full and compact bundle paths."""
         # Arrange
         agents = {
-            "code-writer": AgentInfo(name="code-writer", description="Writes code", model="opus"),
+            "code-writer": AgentInfo(name="code-writer", description="Writes code"),
         }
 
         # Act
@@ -1291,8 +1336,12 @@ class TestGenerateSkillsSection:
         """Skills section should group skills under their category headings."""
         # Arrange
         skills = {
-            "naming": SkillInfo(name="naming", description="Naming", category="conventions"),
-            "runner": SkillInfo(name="runner", description="Runner", category="utilities"),
+            "naming": SkillInfo(
+                name="naming", description="Naming", category="conventions"
+            ),
+            "runner": SkillInfo(
+                name="runner", description="Runner", category="utilities"
+            ),
         }
         manifest: dict[str, Any] = {
             "skills": [
@@ -1317,7 +1366,11 @@ class TestGenerateSkillsSection:
     def test_generate_skills_section_empty_categories_omitted(self) -> None:
         """Empty categories should not appear in the section output."""
         # Arrange
-        skills = {"naming": SkillInfo(name="naming", description="Naming", category="conventions")}
+        skills = {
+            "naming": SkillInfo(
+                name="naming", description="Naming", category="conventions"
+            )
+        }
         manifest: dict[str, Any] = {
             "skills": [{"name": "naming", "category": "conventions"}],
         }
@@ -1355,7 +1408,9 @@ class TestUpdateClaudeMd:
         """
         # Arrange
         claude_md = tmp_path / "CLAUDE.md"
-        claude_md.write_text("# Title\n\n## Commands\n\nOld content here\n\n---\n\n## Other\n\nStuff")
+        claude_md.write_text(
+            "# Title\n\n## Commands\n\nOld content here\n\n---\n\n## Other\n\nStuff"
+        )
         sections = {"Commands": "New content here"}
 
         # Act
@@ -1376,7 +1431,9 @@ class TestUpdateClaudeMd:
         with check:
             assert "## Other\n\nStuff" in result
 
-    def test_update_claude_md_multiple_sections_simultaneously(self, tmp_path: Path) -> None:
+    def test_update_claude_md_multiple_sections_simultaneously(
+        self, tmp_path: Path
+    ) -> None:
         """Updating multiple sections in one call should replace all of them.
 
         Args:
@@ -1434,7 +1491,9 @@ class TestUpdateClaudeMd:
         with check:
             assert claude_md.read_text() == original_content
 
-    def test_update_claude_md_no_changes_when_content_matches(self, tmp_path: Path) -> None:
+    def test_update_claude_md_no_changes_when_content_matches(
+        self, tmp_path: Path
+    ) -> None:
         """Section with identical content should not report changes.
 
         Args:
@@ -1452,7 +1511,9 @@ class TestUpdateClaudeMd:
         # Assert
         assert changes == []
 
-    def test_update_claude_md_nonexistent_file_returns_error(self, tmp_path: Path) -> None:
+    def test_update_claude_md_nonexistent_file_returns_error(
+        self, tmp_path: Path
+    ) -> None:
         """Non-existent CLAUDE.md should return an error message.
 
         Args:
@@ -1471,7 +1532,9 @@ class TestUpdateClaudeMd:
         with check:
             assert "does not exist" in changes[0]
 
-    def test_update_claude_md_nonexistent_section_returns_no_changes(self, tmp_path: Path) -> None:
+    def test_update_claude_md_nonexistent_section_returns_no_changes(
+        self, tmp_path: Path
+    ) -> None:
         """Section name not present in CLAUDE.md should silently return no changes.
 
         Documents intentional behavior: sections that don't exist in the file
@@ -1509,7 +1572,9 @@ class TestRegenerateBundles:
         # Assert
         assert changes == ["Would regenerate bundles"]
 
-    def test_regenerate_bundles_missing_script_returns_error(self, tmp_path: Path) -> None:
+    def test_regenerate_bundles_missing_script_returns_error(
+        self, tmp_path: Path
+    ) -> None:
         """Missing script should return error message.
 
         Args:
@@ -1525,7 +1590,9 @@ class TestRegenerateBundles:
         # Assert
         assert changes == ["generate_bundles.py not found"]
 
-    def test_regenerate_bundles_success_returns_regenerated_message(self, tmp_path: Path) -> None:
+    def test_regenerate_bundles_success_returns_regenerated_message(
+        self, tmp_path: Path
+    ) -> None:
         """Successful subprocess run should return 'Regenerated bundles'.
 
         Args:
@@ -1553,7 +1620,9 @@ class TestRegenerateBundles:
         with check:
             assert mock_run.call_args[1]["capture_output"] is True
 
-    def test_regenerate_bundles_failure_returns_error_with_stderr(self, tmp_path: Path) -> None:
+    def test_regenerate_bundles_failure_returns_error_with_stderr(
+        self, tmp_path: Path
+    ) -> None:
         """Failed subprocess should return error message with stderr content.
 
         Args:
@@ -1562,7 +1631,9 @@ class TestRegenerateBundles:
         # Arrange
         script = tmp_path / "generate_bundles.py"
         script.write_text("")
-        mock_result = MagicMock(returncode=1, stdout="", stderr="ImportError: no module")
+        mock_result = MagicMock(
+            returncode=1, stdout="", stderr="ImportError: no module"
+        )
 
         # Act
         with (
@@ -1589,15 +1660,13 @@ class TestSyncSkillsHelper:
     """Tests for _sync_skills private helper that merges skill lists."""
 
     def test_sync_skills_new_skill_includes_all_fields(self) -> None:
-        """Newly added skill entry should contain all expected fields."""
+        """Newly added skill entry should contain expected fields."""
         # Arrange
         manifest: dict[str, Any] = {"skills": []}
         skills = {
             "new": SkillInfo(
                 name="new",
                 description="A new skill",
-                version="2.0.0",
-                user_invocable=False,
                 category="utilities",
             )
         }
@@ -1611,10 +1680,6 @@ class TestSyncSkillsHelper:
             assert entry["name"] == "new"
         with check:
             assert entry["description"] == "A new skill"
-        with check:
-            assert entry["version"] == "2.0.0"
-        with check:
-            assert entry["user_invocable"] is False
         with check:
             assert entry["category"] == "utilities"
         with check:
@@ -1637,7 +1702,6 @@ class TestSyncAgentsHelper:
             "new": AgentInfo(
                 name="new",
                 description="Agent",
-                model="sonnet",
                 depends_on_skills=["skill-a", "skill-b"],
             )
         }
@@ -1649,8 +1713,6 @@ class TestSyncAgentsHelper:
         entry = new_agents[0]
         with check:
             assert entry["depends_on_skills"] == ["skill-a", "skill-b"]
-        with check:
-            assert entry["model"] == "sonnet"
         with check:
             assert len(changes) == 1
 
@@ -1732,20 +1794,26 @@ class TestMain:
             lambda _s, _a, _c, _m: {},
         )
 
-    def test_main_check_returns_1_when_changes_exist(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_check_returns_1_when_changes_exist(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """--check should return exit code 1 when changes are detected.
 
         Args:
             monkeypatch (pytest.MonkeyPatch): Monkeypatch fixture.
         """
         # Arrange
-        monkeypatch.setattr("sys.argv", ["sync_context.py", "--check", "--skip-bundles"])
+        monkeypatch.setattr(
+            "sys.argv", ["sync_context.py", "--check", "--skip-bundles"]
+        )
         monkeypatch.setattr(
             sync_context,
             "update_manifest",
             lambda m, _s, _a, _c: (m, ["Added skill: test"]),
         )
-        monkeypatch.setattr(sync_context, "update_claude_md", lambda _sections, **_kwargs: [])
+        monkeypatch.setattr(
+            sync_context, "update_claude_md", lambda _sections, **_kwargs: []
+        )
 
         # Act
         result = sync_context.main()
@@ -1753,16 +1821,24 @@ class TestMain:
         # Assert
         assert result == 1
 
-    def test_main_check_returns_0_when_in_sync(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_check_returns_0_when_in_sync(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """--check should return exit code 0 when no changes needed.
 
         Args:
             monkeypatch (pytest.MonkeyPatch): Monkeypatch fixture.
         """
         # Arrange
-        monkeypatch.setattr("sys.argv", ["sync_context.py", "--check", "--skip-bundles"])
-        monkeypatch.setattr(sync_context, "update_manifest", lambda m, _s, _a, _c: (m, []))
-        monkeypatch.setattr(sync_context, "update_claude_md", lambda _sections, **_kwargs: [])
+        monkeypatch.setattr(
+            "sys.argv", ["sync_context.py", "--check", "--skip-bundles"]
+        )
+        monkeypatch.setattr(
+            sync_context, "update_manifest", lambda m, _s, _a, _c: (m, [])
+        )
+        monkeypatch.setattr(
+            sync_context, "update_claude_md", lambda _sections, **_kwargs: []
+        )
 
         # Act
         result = sync_context.main()
@@ -1770,7 +1846,9 @@ class TestMain:
         # Assert
         assert result == 0
 
-    def test_main_dry_run_does_not_write_manifest(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_dry_run_does_not_write_manifest(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """--dry-run should not write manifest to disk even when changes exist.
 
         Args:
@@ -1778,7 +1856,9 @@ class TestMain:
             monkeypatch (pytest.MonkeyPatch): Monkeypatch fixture.
         """
         # Arrange
-        monkeypatch.setattr("sys.argv", ["sync_context.py", "--dry-run", "--skip-bundles"])
+        monkeypatch.setattr(
+            "sys.argv", ["sync_context.py", "--dry-run", "--skip-bundles"]
+        )
         manifest_path = tmp_path / "manifest.json"
         monkeypatch.setattr(sync_context, "MANIFEST_PATH", manifest_path)
         monkeypatch.setattr(
@@ -1798,7 +1878,9 @@ class TestMain:
         with check:
             assert mock_update_claude_md.call_args[1]["dry_run"] is True
 
-    def test_main_skip_bundles_does_not_call_regenerate(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_skip_bundles_does_not_call_regenerate(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """--skip-bundles should not call regenerate_bundles.
 
         Args:
@@ -1806,8 +1888,12 @@ class TestMain:
         """
         # Arrange
         monkeypatch.setattr("sys.argv", ["sync_context.py", "--skip-bundles"])
-        monkeypatch.setattr(sync_context, "update_manifest", lambda m, _s, _a, _c: (m, []))
-        monkeypatch.setattr(sync_context, "update_claude_md", lambda _sections, **_kwargs: [])
+        monkeypatch.setattr(
+            sync_context, "update_manifest", lambda m, _s, _a, _c: (m, [])
+        )
+        monkeypatch.setattr(
+            sync_context, "update_claude_md", lambda _sections, **_kwargs: []
+        )
         mock_regenerate = MagicMock()
         monkeypatch.setattr(sync_context, "regenerate_bundles", mock_regenerate)
 
@@ -1817,7 +1903,9 @@ class TestMain:
         # Assert
         mock_regenerate.assert_not_called()
 
-    def test_main_writes_manifest_when_changes_exist(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_writes_manifest_when_changes_exist(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """main() should write manifest to disk when changes are detected and no flags set.
 
         Args:
@@ -1833,7 +1921,9 @@ class TestMain:
             "update_manifest",
             lambda m, _s, _a, _c: (m, ["Added skill: test"]),
         )
-        monkeypatch.setattr(sync_context, "update_claude_md", lambda _sections, **_kwargs: [])
+        monkeypatch.setattr(
+            sync_context, "update_claude_md", lambda _sections, **_kwargs: []
+        )
 
         # Act
         sync_context.main()

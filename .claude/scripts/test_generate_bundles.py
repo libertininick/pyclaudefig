@@ -82,30 +82,22 @@ def manifest_data() -> dict[str, Any]:
                 "name": "test-skill",
                 "category": "conventions",
                 "description": "A test skill with layers",
-                "user_invocable": True,
-                "version": "1.0.0",
             },
             {
                 "name": "simple-skill",
                 "category": "conventions",
                 "description": "A simple skill without layers",
-                "user_invocable": True,
-                "version": "1.0.0",
             },
             {
                 "name": "no-qr-skill",
                 "category": "conventions",
                 "description": "A skill without Quick Reference",
-                "user_invocable": True,
-                "version": "1.0.0",
             },
         ],
         "agents": [
             {
                 "name": "test-agent",
                 "description": "Test agent",
-                "model": "opus",
-                "version": "1.0.0",
                 "depends_on_skills": ["test-skill", "simple-skill"],
             },
         ],
@@ -169,7 +161,9 @@ class TestLoadManifest:
         with check:
             assert "agents" in result
 
-    def test_load_manifest_missing_file_raises_file_not_found(self, tmp_path: Path) -> None:
+    def test_load_manifest_missing_file_raises_file_not_found(
+        self, tmp_path: Path
+    ) -> None:
         """Missing manifest.json should raise FileNotFoundError.
 
         Args:
@@ -179,10 +173,15 @@ class TestLoadManifest:
         missing_path = tmp_path / "nonexistent" / "manifest.json"
 
         # Act / Assert
-        with patch.object(generate_bundles, "MANIFEST_PATH", missing_path), pytest.raises(FileNotFoundError):
+        with (
+            patch.object(generate_bundles, "MANIFEST_PATH", missing_path),
+            pytest.raises(FileNotFoundError),
+        ):
             generate_bundles.load_manifest()
 
-    def test_load_manifest_invalid_json_raises_decode_error(self, tmp_path: Path) -> None:
+    def test_load_manifest_invalid_json_raises_decode_error(
+        self, tmp_path: Path
+    ) -> None:
         """Invalid JSON in manifest should raise JSONDecodeError.
 
         Args:
@@ -193,7 +192,10 @@ class TestLoadManifest:
         bad_manifest.write_text("{ invalid json }")
 
         # Act / Assert
-        with patch.object(generate_bundles, "MANIFEST_PATH", bad_manifest), pytest.raises(json.JSONDecodeError):
+        with (
+            patch.object(generate_bundles, "MANIFEST_PATH", bad_manifest),
+            pytest.raises(json.JSONDecodeError),
+        ):
             generate_bundles.load_manifest()
 
 
@@ -242,7 +244,9 @@ class TestParseFrontmatter:
     def test_parse_frontmatter_with_valid_frontmatter_returns_dict(self) -> None:
         """Content with valid YAML frontmatter should return parsed dict."""
         # Arrange
-        content = "---\nlayers:\n  rules: rules.md\n  examples: examples.md\n---\n# Title\n"
+        content = (
+            "---\nlayers:\n  rules: rules.md\n  examples: examples.md\n---\n# Title\n"
+        )
 
         # Act
         frontmatter = generate_bundles._parse_frontmatter(content)
@@ -323,7 +327,9 @@ class TestRemoveFrontmatter:
     def test_remove_frontmatter_preserves_horizontal_rules_in_body(self) -> None:
         """Horizontal rules (---) in body content should be preserved after frontmatter removal."""
         # Arrange
-        content = "---\nlayers:\n  rules: rules.md\n---\n# Title\n\n---\n\nBody after rule.\n"
+        content = (
+            "---\nlayers:\n  rules: rules.md\n---\n# Title\n\n---\n\nBody after rule.\n"
+        )
 
         # Act
         cleaned = generate_bundles._remove_frontmatter(content)
@@ -345,7 +351,9 @@ class TestRemoveFrontmatter:
 class TestLoadLayerFiles:
     """Tests for loading layer files from a skill directory."""
 
-    def test_load_layer_files_existing_files_returns_content(self, tmp_path: Path) -> None:
+    def test_load_layer_files_existing_files_returns_content(
+        self, tmp_path: Path
+    ) -> None:
         """Layer files that exist should have their content loaded.
 
         Args:
@@ -414,7 +422,9 @@ class TestLoadLayerFiles:
 class TestLoadSkillContent:
     """Tests for loading complete skill content including layers."""
 
-    def test_load_skill_content_with_layers_returns_skill(self, skills_dir: Path) -> None:
+    def test_load_skill_content_with_layers_returns_skill(
+        self, skills_dir: Path
+    ) -> None:
         """Skill with frontmatter layers should load main content and layers.
 
         Args:
@@ -435,7 +445,9 @@ class TestLoadSkillContent:
         with check:
             assert "Example A" in skill.layers["examples"]
 
-    def test_load_skill_content_without_layers_returns_skill(self, skills_dir: Path) -> None:
+    def test_load_skill_content_without_layers_returns_skill(
+        self, skills_dir: Path
+    ) -> None:
         """Skill without frontmatter layers should load with empty layers dict.
 
         Args:
@@ -454,7 +466,9 @@ class TestLoadSkillContent:
         with check:
             assert skill.layers == {}
 
-    def test_load_skill_content_missing_skill_returns_none(self, skills_dir: Path) -> None:
+    def test_load_skill_content_missing_skill_returns_none(
+        self, skills_dir: Path
+    ) -> None:
         """Non-existent skill should return None.
 
         Args:
@@ -511,7 +525,9 @@ class TestExtractQuickReference:
     def test_extract_quick_reference_at_end_of_content_returns_section(self) -> None:
         """Quick Reference at the very end of content should still be extracted."""
         # Arrange
-        content = "# Skill\n\n## Quick Reference\n\n| Col | Val |\n|-----|-----|\n| X | Y |"
+        content = (
+            "# Skill\n\n## Quick Reference\n\n| Col | Val |\n|-----|-----|\n| X | Y |"
+        )
 
         # Act
         quick_ref = generate_bundles.extract_quick_reference(content)
@@ -785,7 +801,9 @@ class TestFormatSkillSection:
         with check:
             assert "Rule content." not in joined
 
-    def test_format_skill_section_compact_mode_without_quick_ref_falls_back(self) -> None:
+    def test_format_skill_section_compact_mode_without_quick_ref_falls_back(
+        self,
+    ) -> None:
         """Compact mode without Quick Reference should fall back to full content."""
         # Arrange
         skill = generate_bundles.SkillContent(
@@ -794,7 +812,9 @@ class TestFormatSkillSection:
         )
 
         # Act
-        lines = generate_bundles._format_skill_section("no-qr-skill", skill, compact=True)
+        lines = generate_bundles._format_skill_section(
+            "no-qr-skill", skill, compact=True
+        )
 
         # Assert
         joined = "\n".join(lines)
@@ -812,7 +832,9 @@ class TestFormatSkillSection:
 class TestGenerateBundle:
     """Tests for full bundle generation."""
 
-    def test_generate_bundle_full_mode_includes_all_skills(self, skills_dir: Path) -> None:
+    def test_generate_bundle_full_mode_includes_all_skills(
+        self, skills_dir: Path
+    ) -> None:
         """Full bundle should include header, TOC, and all skill content.
 
         Args:
@@ -830,7 +852,9 @@ class TestGenerateBundle:
 
         # Act
         with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            bundle = generate_bundles.generate_bundle("test-agent", agent_config, skills_lookup, compact=False)
+            bundle = generate_bundles.generate_bundle(
+                "test-agent", agent_config, skills_lookup, compact=False
+            )
 
         # Assert
         with check:
@@ -846,7 +870,9 @@ class TestGenerateBundle:
         with check:
             assert "Simple content." in bundle
 
-    def test_generate_bundle_compact_mode_uses_quick_ref(self, skills_dir: Path) -> None:
+    def test_generate_bundle_compact_mode_uses_quick_ref(
+        self, skills_dir: Path
+    ) -> None:
         """Compact bundle should use Quick Reference sections where available.
 
         Args:
@@ -863,7 +889,9 @@ class TestGenerateBundle:
 
         # Act
         with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            bundle = generate_bundles.generate_bundle("test-agent", agent_config, skills_lookup, compact=True)
+            bundle = generate_bundles.generate_bundle(
+                "test-agent", agent_config, skills_lookup, compact=True
+            )
 
         # Assert
         with check:
@@ -873,7 +901,9 @@ class TestGenerateBundle:
         with check:
             assert "Other content." not in bundle
 
-    def test_generate_bundle_skips_missing_skills(self, skills_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_generate_bundle_skips_missing_skills(
+        self, skills_dir: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Bundle generation should exclude missing skills from both TOC and content.
 
         Args:
@@ -891,7 +921,9 @@ class TestGenerateBundle:
 
         # Act
         with patch.object(generate_bundles, "SKILLS_DIR", skills_dir):
-            bundle = generate_bundles.generate_bundle("test-agent", agent_config, skills_lookup, compact=False)
+            bundle = generate_bundles.generate_bundle(
+                "test-agent", agent_config, skills_lookup, compact=False
+            )
 
         # Assert - missing skill excluded from entire bundle (TOC and content)
         with check:
@@ -987,7 +1019,9 @@ class TestWriteBundle:
         with check:
             assert bundle_path.read_text() == content
 
-    def test_write_bundle_prints_relative_path(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_write_bundle_prints_relative_path(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Write should print the relative path from CLAUDE_DIR.
 
         Args:
@@ -1124,7 +1158,9 @@ class TestGenerateAllBundles:
             patch.object(generate_bundles, "MANIFEST_PATH", manifest_file),
             patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
         ):
-            generate_bundles.generate_all_bundles(dry_run=False, agent_filter="test-agent")
+            generate_bundles.generate_all_bundles(
+                dry_run=False, agent_filter="test-agent"
+            )
 
         # Assert
         with check:
@@ -1152,7 +1188,9 @@ class TestGenerateAllBundles:
             patch.object(generate_bundles, "MANIFEST_PATH", manifest_file),
             patch.object(generate_bundles, "CLAUDE_DIR", bundles_dir.parent),
         ):
-            generate_bundles.generate_all_bundles(dry_run=False, agent_filter="nonexistent-agent")
+            generate_bundles.generate_all_bundles(
+                dry_run=False, agent_filter="nonexistent-agent"
+            )
 
         # Assert - only the pre-existing bundles dir, no new files
         bundle_files = list(bundles_dir.glob("*.md"))
@@ -1200,7 +1238,7 @@ class TestGenerateAllBundles:
         # Arrange - manifest with skills but no agents key
         manifest = {
             "skills": [
-                {"name": "simple-skill", "description": "Simple", "version": "1.0.0"},
+                {"name": "simple-skill", "description": "Simple"},
             ]
         }
         manifest_path = tmp_path / "manifest.json"
@@ -1235,21 +1273,17 @@ class TestGenerateAllBundles:
         # Arrange - manifest with two agents
         manifest = {
             "skills": [
-                {"name": "simple-skill", "description": "Simple", "version": "1.0.0"},
+                {"name": "simple-skill", "description": "Simple"},
             ],
             "agents": [
                 {
                     "name": "agent-one",
                     "description": "First",
-                    "model": "opus",
-                    "version": "1.0.0",
                     "depends_on_skills": ["simple-skill"],
                 },
                 {
                     "name": "agent-two",
                     "description": "Second",
-                    "model": "sonnet",
-                    "version": "1.0.0",
                     "depends_on_skills": ["simple-skill"],
                 },
             ],
@@ -1318,7 +1352,9 @@ class TestParseArgs:
     def test_parse_args_both_flags_combined(self) -> None:
         """Both --dry-run and --agent should work together."""
         # Act
-        with patch("sys.argv", ["generate_bundles.py", "--dry-run", "--agent", "my-agent"]):
+        with patch(
+            "sys.argv", ["generate_bundles.py", "--dry-run", "--agent", "my-agent"]
+        ):
             args = generate_bundles._parse_args()
 
         # Assert

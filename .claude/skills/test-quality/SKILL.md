@@ -1,6 +1,5 @@
 ---
 name: test-quality
-version: 1.0.0
 description: Test quality assessment criteria for reviewing tests. Apply when evaluating tests for substantive coverage, organization, maintainability, and realistic test data variety.
 user-invocable: false
 layers:

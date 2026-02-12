@@ -33,8 +33,12 @@ SKILLS_DIR: Final[Path] = CLAUDE_DIR / "skills"
 MANIFEST_PATH: Final[Path] = CLAUDE_DIR / "manifest.json"
 BUNDLES_DIR: Final[Path] = CLAUDE_DIR / "bundles"
 
-FRONTMATTER_PATTERN: Final[re.Pattern[str]] = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
-QUICK_REFERENCE_PATTERN: Final[re.Pattern[str]] = re.compile(r"(## Quick Reference\n.*?)(?=\n## |\Z)", re.DOTALL)
+FRONTMATTER_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"^---\n(.*?)\n---\n", re.DOTALL
+)
+QUICK_REFERENCE_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"(## Quick Reference\n.*?)(?=\n## |\Z)", re.DOTALL
+)
 
 
 @dataclass
@@ -167,8 +171,14 @@ def _order_layers(layers: dict[str, str]) -> list[tuple[str, str]]:
     priority_order = ["rules", "examples"]
     priority_set = set(priority_order)
 
-    priority_layers = [(name, layers[name]) for name in priority_order if name in layers]
-    other_layers = [(name, layers[name]) for name in sorted(layers.keys()) if name not in priority_set]
+    priority_layers = [
+        (name, layers[name]) for name in priority_order if name in layers
+    ]
+    other_layers = [
+        (name, layers[name])
+        for name in sorted(layers.keys())
+        if name not in priority_set
+    ]
 
     return [*priority_layers, *other_layers]
 
@@ -191,12 +201,14 @@ def _format_layers(skill_name: str, layers: dict[str, str]) -> list[str]:
 
     lines: list[str] = []
     for layer_name, layer_content in _order_layers(layers):
-        lines.extend([
-            f"<!-- {skill_name}/{layer_name} -->",
-            "",
-            layer_content,
-            "",
-        ])
+        lines.extend(
+            [
+                f"<!-- {skill_name}/{layer_name} -->",
+                "",
+                layer_content,
+                "",
+            ]
+        )
     return lines
 
 
@@ -243,7 +255,9 @@ def _build_table_of_contents(
     return lines
 
 
-def _format_skill_section(skill_name: str, skill: SkillContent, *, compact: bool) -> list[str]:
+def _format_skill_section(
+    skill_name: str, skill: SkillContent, *, compact: bool
+) -> list[str]:
     """Format a single skill's content for inclusion in a bundle.
 
     For compact bundles, only the Quick Reference section is included.
@@ -355,19 +369,27 @@ def _process_agent(
     print(f"\nGenerating bundle for: {agent_name}")
     print(f"  Dependencies: {len(dependencies)} skills")
 
-    full_content = generate_bundle(agent_name, agent_config, skills_lookup, compact=False)
-    compact_content = generate_bundle(agent_name, agent_config, skills_lookup, compact=True)
+    full_content = generate_bundle(
+        agent_name, agent_config, skills_lookup, compact=False
+    )
+    compact_content = generate_bundle(
+        agent_name, agent_config, skills_lookup, compact=True
+    )
 
     if dry_run:
         print(f"  Would write: bundles/{agent_name}.md ({len(full_content)} chars)")
-        print(f"  Would write: bundles/{agent_name}-compact.md ({len(compact_content)} chars)")
+        print(
+            f"  Would write: bundles/{agent_name}-compact.md ({len(compact_content)} chars)"
+        )
         return
 
     _write_bundle(BUNDLES_DIR / f"{agent_name}.md", full_content)
     _write_bundle(BUNDLES_DIR / f"{agent_name}-compact.md", compact_content)
 
 
-def generate_all_bundles(*, dry_run: bool = False, agent_filter: str | None = None) -> None:
+def generate_all_bundles(
+    *, dry_run: bool = False, agent_filter: str | None = None
+) -> None:
     """Generate bundles for all agents in the manifest.
 
     Args:
@@ -393,7 +415,9 @@ def _parse_args() -> argparse.Namespace:
     Returns:
         argparse.Namespace: Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Generate context bundles for agents from manifest dependencies.")
+    parser = argparse.ArgumentParser(
+        description="Generate context bundles for agents from manifest dependencies."
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",

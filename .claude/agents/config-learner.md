@@ -1,6 +1,5 @@
 ---
 name: config-learner
-version: 1.0.0
 description: Analyzes user feedback and iteratively improves Claude Code configuration. Updates skills, agents, commands, and CLAUDE.md based on what went well or poorly.
 model: opus
 color: cyan

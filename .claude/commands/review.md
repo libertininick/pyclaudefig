@@ -1,6 +1,5 @@
 ---
 name: review
-version: 2.1.0
 description: Unified code review for source and test files
 depends_on_agents:
   - code-style-reviewer

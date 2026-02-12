@@ -585,7 +585,9 @@ class TestFormatIssues:
 
     def test_format_single_builtin_issue(self) -> None:
         """Given single builtin issue, formats correctly."""
-        issues = [SafetyIssue(IssueCategory.BUILTIN, "eval", "arbitrary code execution")]
+        issues = [
+            SafetyIssue(IssueCategory.BUILTIN, "eval", "arbitrary code execution")
+        ]
         result = format_issues(issues)
         assert result == "  - Builtin: eval (arbitrary code execution)"
 
@@ -667,7 +669,9 @@ class TestCLICodeString:
         assert "[BLOCKED]" in result.stdout
         assert "Method: unlink" in result.stdout
 
-    def test_cli_blocked_output_includes_permission_hint(self, script_path: Path) -> None:
+    def test_cli_blocked_output_includes_permission_hint(
+        self, script_path: Path
+    ) -> None:
         """Test blocked output includes hint about asking user permission."""
         result = subprocess.run(
             ["python", str(script_path), "-c", "import os"],
@@ -696,7 +700,9 @@ class TestCLICodeString:
 class TestCLIFileInput:
     """Tests for CLI with -f flag (file input)."""
 
-    def test_cli_file_safe_executes(self, script_path: Path, tmp_python_file: Path) -> None:
+    def test_cli_file_safe_executes(
+        self, script_path: Path, tmp_python_file: Path
+    ) -> None:
         """Test -f with safe file executes and returns 0."""
         tmp_python_file.write_text("print('hello from file')")
         result = subprocess.run(
@@ -708,7 +714,9 @@ class TestCLIFileInput:
         assert "[EXECUTED]" in result.stdout
         assert "hello from file" in result.stdout
 
-    def test_cli_file_unsafe_blocks(self, script_path: Path, tmp_python_file: Path) -> None:
+    def test_cli_file_unsafe_blocks(
+        self, script_path: Path, tmp_python_file: Path
+    ) -> None:
         """Test -f with unsafe file blocks and returns 1."""
         tmp_python_file.write_text("import subprocess")
         result = subprocess.run(
@@ -731,7 +739,9 @@ class TestCLIFileInput:
         assert "[ERROR]" in result.stderr
         assert "not found" in result.stderr.lower()
 
-    def test_cli_file_with_syntax_error(self, script_path: Path, tmp_python_file: Path) -> None:
+    def test_cli_file_with_syntax_error(
+        self, script_path: Path, tmp_python_file: Path
+    ) -> None:
         """Test -f with file containing syntax error blocks."""
         tmp_python_file.write_text("def broken(")
         result = subprocess.run(

@@ -296,6 +296,7 @@ class TestBuildArgumentParser:
         with pytest.raises(SystemExit):
             parser.parse_args(args_without_output)
 
+
 class TestMain:
     """Tests for main CLI entry point."""
 

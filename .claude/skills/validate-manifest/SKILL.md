@@ -1,6 +1,5 @@
 ---
 name: validate-manifest
-version: 1.0.0
 description: Validate .claude/manifest.json structure and references. Apply after modifying the manifest to ensure correctness.
 user-invocable: false
 ---
@@ -14,7 +13,7 @@ Validates the `.claude/manifest.json` file for structure, required fields, and d
 Use this skill after modifying the manifest:
 - Adding a new skill, agent, or command
 - Updating dependencies (`depends_on_skills`, `depends_on_agents`)
-- Changing categories or versions
+- Changing categories
 
 ## Validation Script
 
@@ -37,7 +36,6 @@ uv run python .claude/scripts/validate_manifest.py
 | Categories | Skill categories must exist in `categories` object |
 | Dependencies | All referenced skills/agents must exist |
 | Uniqueness | Names must be unique within each type |
-| Version format | Must be semver (e.g., "1.0.0") |
 
 ## Required Fields by Type
 
@@ -46,9 +44,7 @@ uv run python .claude/scripts/validate_manifest.py
 {
   "name": "skill-name",
   "category": "conventions|assessment|templates|utilities",
-  "description": "Brief description",
-  "user_invocable": true|false,
-  "version": "1.0.0"
+  "description": "Brief description"
 }
 ```
 
@@ -57,8 +53,6 @@ uv run python .claude/scripts/validate_manifest.py
 {
   "name": "agent-name",
   "description": "Brief description",
-  "model": "opus|sonnet|haiku",
-  "version": "1.0.0",
   "depends_on_skills": ["skill-name-1", "skill-name-2"]
 }
 ```
@@ -67,8 +61,7 @@ uv run python .claude/scripts/validate_manifest.py
 ```json
 {
   "name": "command-name",
-  "description": "Brief description",
-  "version": "1.0.0"
+  "description": "Brief description"
 }
 ```
 
@@ -90,9 +83,7 @@ Optional command fields: `depends_on_skills`, `depends_on_agents`
 {
   "name": "my-new-skill",
   "category": "conventions",
-  "description": "What the skill does",
-  "user_invocable": false,
-  "version": "1.0.0"
+  "description": "What the skill does"
 }
 ```
 
