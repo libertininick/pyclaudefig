@@ -73,6 +73,76 @@ def test_error():  # No context about what's being tested
     ...
 ```
 
+## Test Function Docstrings
+
+Every test function must have a **full Google-style docstring** that passes pydoclint. This means:
+
+- **One-line summary** — Always required (ends with period)
+- **Args section** — Required for every parameter in the function signature (excluding `self`)
+  - Fixture parameters: document what the fixture provides
+  - `@pytest.mark.parametrize` parameters: document what each parameter represents
+- **Docstring arguments must exactly match the function signature** (same names, same count)
+
+pydoclint is configured with `skip-checking-short-docstrings = false`, so one-line docstrings on functions with parameters will fail validation.
+
+```python
+# CORRECT - full docstring with Args for fixture parameter
+def test_search_returns_nearest_match(search_index: SearchIndex) -> None:
+    """Search should return the nearest embedding.
+
+    Args:
+        search_index (SearchIndex): Populated search index fixture.
+    """
+    ...
+
+
+# CORRECT - full docstring with Args for parametrized parameters
+@pytest.mark.parametrize(
+    ("input_text", "expected_tokens"),
+    [("hello world", ["hello", "world"]), ("", [])],
+)
+def test_tokenize(input_text: str, expected_tokens: list[str]) -> None:
+    """Tokenizer should handle various input formats.
+
+    Args:
+        input_text (str): Raw text to tokenize.
+        expected_tokens (list[str]): Expected token list after tokenization.
+    """
+    assert tokenize(input_text) == expected_tokens
+
+
+# CORRECT - no Args needed when there are no parameters
+def test_calculate_similarity_identical_vectors_returns_one() -> None:
+    """Identical vectors should have similarity of 1.0."""
+    ...
+
+
+# CORRECT - test class method with fixture parameter
+def test_load_data_success(self, processor: DataProcessor) -> None:
+    """Test successful data loading with valid input.
+
+    Args:
+        processor (DataProcessor): DataProcessor instance fixture.
+    """
+    ...
+
+
+# INCORRECT - missing Args section (will fail pydoclint)
+def test_search_returns_nearest_match(search_index: SearchIndex) -> None:
+    """Search should return the nearest embedding."""
+    ...
+
+
+# INCORRECT - Args don't match signature
+def test_tokenize(input_text: str, expected_tokens: list[str]) -> None:
+    """Tokenizer should handle various input formats.
+
+    Args:
+        input_text (str): Raw text to tokenize.
+    """
+    ...
+```
+
 ## Test Structure: Arrange-Act-Assert
 
 Always organize tests with clear AAA sections:
@@ -234,7 +304,11 @@ def search_index() -> SearchIndex:
 
 # CORRECT - test data defined inline, fixture only for the dependency
 def test_search_returns_nearest_match(search_index: SearchIndex) -> None:
-    """Search should return the nearest embedding."""
+    """Search should return the nearest embedding.
+
+    Args:
+        search_index (SearchIndex): Populated search index fixture.
+    """
     # Arrange - test-specific data defined inline
     query_vector = [0.9, 0.1, 0.0]
 
@@ -284,7 +358,12 @@ Use for testing multiple inputs with the same logic:
     ],
 )
 def test_tokenize(input_text: str, expected_tokens: list[str]) -> None:
-    """Tokenizer should handle various input formats."""
+    """Tokenizer should handle various input formats.
+
+    Args:
+        input_text (str): Raw text to tokenize.
+        expected_tokens (list[str]): Expected token list after tokenization.
+    """
     assert tokenize(input_text) == expected_tokens
 
 
@@ -316,7 +395,11 @@ class TestDataProcessor:
         return DataProcessor(max_size=1000, validate=True)
 
     def test_load_data_success(self, processor: DataProcessor) -> None:
-        """Test successful data loading with valid input."""
+        """Test successful data loading with valid input.
+
+        Args:
+            processor (DataProcessor): DataProcessor instance fixture.
+        """
         # Arrange - test data inline so reader sees exactly what's loaded
         sample_data = [
             {"id": 1, "value": 10.5, "name": "Alice"},
@@ -333,7 +416,11 @@ class TestDataProcessor:
             assert processor.is_loaded
 
     def test_load_data_exceeds_max_size(self, processor: DataProcessor) -> None:
-        """Test that loading data exceeding max_size raises ValueError."""
+        """Test that loading data exceeding max_size raises ValueError.
+
+        Args:
+            processor (DataProcessor): DataProcessor instance fixture.
+        """
         # Arrange
         large_data = [{"id": i} for i in range(2000)]
 
