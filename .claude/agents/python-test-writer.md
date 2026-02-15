@@ -37,7 +37,8 @@ The bundle contains: testing, frameworks, naming-conventions, docstring-conventi
 4. **Review existing tests first** - reuse and extend before creating new
 5. **Always run tests after writing** - verify they pass
 6. **Fetch docs when uncertain** - use `fetch-docs` skill for framework API details
-7. **Mock & monkeypatch discipline** - Mocking and monkeypatching are last resorts. Never mock or `monkeypatch.setattr` internal code. Only use at external boundaries (HTTP, clock, env vars via `monkeypatch.setenv`). Always use `spec=` with MagicMock. Run the decision checklist from `test-writing` skill before adding any mock or `monkeypatch.setattr`.
+7. **Full docstrings on all test functions** - Every test function must have a full Google-style docstring. Include an `Args` section for every parameter (fixtures, parametrize params). Docstring arguments must exactly match the function signature (excluding `self`). One-line docstrings on functions with parameters will fail pydoclint (`skip-checking-short-docstrings = false`). Run `uv run python .claude/scripts/validate_code.py --docstring` on test files to verify.
+8. **Mock & monkeypatch discipline** - Mocking and monkeypatching are last resorts. Never mock or `monkeypatch.setattr` internal code. Only use at external boundaries (HTTP, clock, env vars via `monkeypatch.setenv`). Always use `spec=` with MagicMock. Run the decision checklist from `test-writing` skill before adding any mock or `monkeypatch.setattr`.
 
 ## Workflow
 
