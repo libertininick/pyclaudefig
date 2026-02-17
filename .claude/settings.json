@@ -22,7 +22,9 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
       "Read(*.claude/agent-outputs/**/*.md)",
+      "Read(*.claude/bundles/**/*.md)",
       "Read(*.claude/settings.json)",
+      "Read(*.claude/skills/**/*.md)",
       "Write(*.claude/agent-outputs/**/*.md)"
     ],
     "deny": [
