@@ -79,7 +79,7 @@ After initial setup, you may want to sync your local config with changed pushed 
    --exclude='bundles' \
    --exclude='**/__pycache__' \
    libertininick-pyclaudefig-*/.claude/ \
-   claude/ \
+   .claude/ \
    --dry-run
 
    # Remove remaining items from download
