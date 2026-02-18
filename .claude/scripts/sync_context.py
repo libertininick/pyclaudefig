@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = []
+# dependencies = ["pyyaml>=6.0"]
 # ///
 """Synchronize Claude context files with actual skills, agents, and commands on disk.
 
