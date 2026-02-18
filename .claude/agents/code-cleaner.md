@@ -115,7 +115,7 @@ Apply `type-hints` skill:
 
 Run validation **BEFORE cleaning** (to capture baseline) and **AFTER cleaning** (to prove no regressions) using the `validate-code` skill:
 ```bash
-uv run python .claude/scripts/validate_code.py --lint --type --docstring <file>
+uv run .claude/scripts/validate_code.py --lint --type --docstring <file>
 ```
 
 After confirming no regressions, apply auto-fixes and formatting:

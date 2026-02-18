@@ -7,8 +7,8 @@ Guidance for Claude Code when working in this repository.
 | Task | Command |
 |------|---------|
 | Install/sync dependencies | `uv sync` |
-| **Validate all** | **`uv run python .claude/scripts/validate_code.py`** |
-| Validate (selective) | `uv run python .claude/scripts/validate_code.py --lint --type` |
+| **Validate all** | **`uv run .claude/scripts/validate_code.py`** |
+| Validate (selective) | `uv run .claude/scripts/validate_code.py --lint --type` |
 | Format code | `uv run ruff format` |
 | Lint code | `uv run ruff check` |
 | Docstring check | `uv tool run pydoclint --style=google --allow-init-docstring=True` |
@@ -19,7 +19,7 @@ Guidance for Claude Code when working in this repository.
 ## Critical Rules
 
 > **PYTHON EXECUTION**: When running generated Python via Bash, use `run-python-safely` skill first.
-> Exceptions: `uv run pytest`, `ruff`, `ty check`, `uv run python .claude/scripts/validate_code.py`, other standard CLI tools.
+> Exceptions: `uv run pytest`, `ruff`, `ty check`, `uv run .claude/scripts/validate_code.py`, other standard CLI tools.
 
 1. **Approved frameworks only** - Use `frameworks` skill; never substitute alternatives
 2. **Load convention skills before editing code** - Before writing, moving, or restructuring Python code, read the relevant skill files from `.claude/skills/`:
@@ -147,7 +147,7 @@ Pre-composed skill content for agents. Bundles provide exactly the context each 
 
 **Regenerate bundles** after modifying skills:
 ```bash
-uv run python .claude/scripts/generate_bundles.py
+uv run .claude/scripts/generate_bundles.py
 ```
 
 

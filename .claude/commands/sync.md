@@ -13,10 +13,10 @@ Synchronize `.claude/` context files with the actual skills, agents, and command
 
 | Task | Command |
 |------|---------|
-| Full sync | `uv run python .claude/scripts/sync_context.py` |
-| Preview changes | `uv run python .claude/scripts/sync_context.py --dry-run` |
-| Check for drift | `uv run python .claude/scripts/sync_context.py --check` |
-| Regenerate bundles | `uv run python .claude/scripts/generate_bundles.py` |
+| Full sync | `uv run .claude/scripts/sync_context.py` |
+| Preview changes | `uv run .claude/scripts/sync_context.py --dry-run` |
+| Check for drift | `uv run .claude/scripts/sync_context.py --check` |
+| Regenerate bundles | `uv run .claude/scripts/generate_bundles.py` |
 
 ## Examples
 
@@ -47,10 +47,10 @@ mkdir -p .claude/skills/my-skill
 # ... create SKILL.md with frontmatter ...
 
 # Sync to update manifest.json and CLAUDE.md
-uv run python .claude/scripts/sync_context.py
+uv run .claude/scripts/sync_context.py
 
 # If skill is used by an agent, add to depends_on_skills in manifest.json, then:
-uv run python .claude/scripts/generate_bundles.py
+uv run .claude/scripts/generate_bundles.py
 ```
 
 ### 2. After Adding a New Agent
@@ -60,7 +60,7 @@ uv run python .claude/scripts/generate_bundles.py
 # ... create .claude/agents/my-agent.md ...
 
 # Sync to update manifest.json, CLAUDE.md, and generate bundles
-uv run python .claude/scripts/sync_context.py
+uv run .claude/scripts/sync_context.py
 ```
 
 ### 3. After Adding a New Command
@@ -70,7 +70,7 @@ uv run python .claude/scripts/sync_context.py
 # ... create .claude/commands/my-command.md ...
 
 # Sync to update manifest.json and CLAUDE.md
-uv run python .claude/scripts/sync_context.py
+uv run .claude/scripts/sync_context.py
 ```
 
 ### 4. After Removing Items
@@ -82,7 +82,7 @@ The sync script detects items that exist in manifest.json but not on disk, and r
 To see what's out of sync without making changes:
 
 ```bash
-uv run python .claude/scripts/sync_context.py --check
+uv run .claude/scripts/sync_context.py --check
 ```
 
 ## Frontmatter Requirements
@@ -144,7 +144,7 @@ If you prefer to sync manually:
 3. **Scan for new commands**: `ls .claude/commands/*.md`
 4. **Update manifest.json**: Add/remove entries
 5. **Update CLAUDE.md sections**: Commands, Agents, Context Bundles, Skills
-6. **Regenerate bundles**: `uv run python .claude/scripts/generate_bundles.py`
+6. **Regenerate bundles**: `uv run .claude/scripts/generate_bundles.py`
 
 ## Post-Sync Checklist
 

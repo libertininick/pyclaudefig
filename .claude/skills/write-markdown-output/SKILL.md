@@ -31,7 +31,7 @@ Files are written to: `<output-dir>/<timestamp>-<scope>.md`
 Pass content via a bash heredoc. The single-quoted delimiter `<<'CONTENT_EOF'` prevents all shell interpolation, making backticks, dollar signs, quotes, and other special characters completely safe. Content is always read from stdin:
 
 ```bash
-uv run python .claude/scripts/write_markdown_output.py -s "scope-name" -o ".claude/agent-outputs/plans" <<'CONTENT_EOF'
+uv run .claude/scripts/write_markdown_output.py -s "scope-name" -o ".claude/agent-outputs/plans" <<'CONTENT_EOF'
 # Your Markdown Content
 
 Code with `backticks`, $variables, "double quotes", and 'single quotes' are all safe.

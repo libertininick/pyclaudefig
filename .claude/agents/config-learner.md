@@ -98,9 +98,9 @@ Shall I proceed with these changes?
 After user approval:
 
 1. Apply changes to files using Edit (for modifications) or Write (for new files)
-2. If new skills/agents/commands were created, run: `uv run python .claude/scripts/sync_context.py`
-3. If any skill content was modified or created, run: `uv run python .claude/scripts/generate_bundles.py`
-4. Run: `uv run python .claude/scripts/validate_manifest.py` to validate
+2. If new skills/agents/commands were created, run: `uv run .claude/scripts/sync_context.py`
+3. If any skill content was modified or created, run: `uv run .claude/scripts/generate_bundles.py`
+4. Run: `uv run .claude/scripts/validate_manifest.py` to validate
 5. If validation fails, diagnose and fix the issue
 6. Report a summary of what was changed and why
 

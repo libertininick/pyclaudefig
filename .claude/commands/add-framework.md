@@ -76,7 +76,7 @@ Keep the table sorted alphabetically by framework name.
 Since the frameworks skill is included in agent bundles, regenerate them:
 
 ```bash
-uv run python .claude/scripts/generate_bundles.py
+uv run .claude/scripts/generate_bundles.py
 ```
 
 ### Step 6: Validate Manifest
@@ -84,7 +84,7 @@ uv run python .claude/scripts/generate_bundles.py
 Run the manifest validation script:
 
 ```bash
-uv run python .claude/scripts/validate_manifest.py
+uv run .claude/scripts/validate_manifest.py
 ```
 
 Fix any errors before completing.

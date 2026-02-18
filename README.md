@@ -14,7 +14,7 @@ This configuration assumes you already have:
    - `ty` (type checking)
    - `pytest` + `pytest-check` + `pytest-cov` (testing + coverage)
    - `pydoclint` (docstring formatting)
-   - All tools are runnable via `uv run python .claude/scripts/validate_code.py`
+   - All tools are runnable via `uv run .claude/scripts/validate_code.py`
 4. **[Context7](https://context7.com/sign-up) free account** for fetching up-to-date framework documentation via MCP
 
 ### Initial setup
@@ -197,7 +197,7 @@ Agents need skill knowledge, but loading skills individually at runtime is ineff
 
 ```bash
 # Regenerate bundles after modifying skills
-uv run python .claude/scripts/generate_bundles.py
+uv run .claude/scripts/generate_bundles.py
 ```
 
 Two bundle variants are generated:
@@ -339,7 +339,7 @@ Run `/add-framework --help` for more examples.
 
 5. **Regenerate bundles:**
    ```bash
-   uv run python .claude/scripts/generate_bundles.py
+   uv run .claude/scripts/generate_bundles.py
    ```
 
 6. **Update CLAUDE.md:**
@@ -443,7 +443,7 @@ The `config-learner` agent analyzes your feedback, proposes targeted changes to 
 
 ### Agent doesn't know about a skill
 - Check `manifest.json` that the agent's `depends_on_skills` includes the skill
-- Regenerate bundles: `uv run python .claude/scripts/generate_bundles.py`
+- Regenerate bundles: `uv run .claude/scripts/generate_bundles.py`
 
 ### Command not appearing in /help
 - Ensure the command file has correct frontmatter

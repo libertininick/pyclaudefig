@@ -163,7 +163,7 @@ With bundles, an agent:
 
 After modifying skills:
 ```bash
-uv run python .claude/scripts/generate_bundles.py
+uv run .claude/scripts/generate_bundles.py
 ```
 
 ---

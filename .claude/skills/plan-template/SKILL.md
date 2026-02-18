@@ -206,7 +206,7 @@ Each phase produces working, tested, validated code before moving to the next.
 ##### Step N.V1: Validate Implementation
 - **Action**: Run all quality checks via `validate-code` skill
 - **Validation**:
-  - **Command**: `uv run python .claude/scripts/validate_code.py`
+  - **Command**: `uv run .claude/scripts/validate_code.py`
   - **Expected**: All checks pass
   - **Manual Check**: Code follows project conventions
 ```
@@ -228,7 +228,7 @@ Every plan MUST end with an E2E validation phase:
 #### Step N.2: Verify Acceptance Criteria
 - **Action**: Check all acceptance criteria from plan overview
 - **Validation**:
-  - **Command**: `uv run python .claude/scripts/validate_code.py`
+  - **Command**: `uv run .claude/scripts/validate_code.py`
   - **Expected**: All quality checks pass
   - **Manual Check**: All acceptance criteria checkboxes complete
 ```
@@ -334,7 +334,7 @@ Include this checklist in every plan:
 - [ ] Code follows project conventions
 - [ ] No code duplication (DRY principle)
 - [ ] Error handling with clear messages
-- [ ] Passes validation checks (`uv run python .claude/scripts/validate_code.py`)
+- [ ] Passes validation checks (`uv run .claude/scripts/validate_code.py`)
 ```
 
 ---
@@ -353,7 +353,7 @@ Include this checklist in every plan:
 - [ ] All unit tests pass (`uv run pytest`)
 - [ ] All public functions have a test
 - [ ] Code coverage >= 90%
-- [ ] Validation passes (`uv run python .claude/scripts/validate_code.py`)
+- [ ] Validation passes (`uv run .claude/scripts/validate_code.py`)
 - [ ] No security vulnerabilities
 
 ### Documentation Acceptance

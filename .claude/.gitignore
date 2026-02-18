@@ -1,7 +1,7 @@
 # Ignore agent output files
 agent-outputs/
 
-# Ignore generated bundles (regenerate with: uv run python .claude/scripts/generate_bundles.py)
+# Ignore generated bundles (regenerate with: uv run .claude/scripts/generate_bundles.py)
 bundles/
 
 # Python Byte-compiled / optimized / DLL files

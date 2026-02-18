@@ -137,7 +137,7 @@ Refactor the existing SQL generation logic scattered across multiple files into 
 #### Step 1.3: Validate - Verify ClauseBuilder implementation
 - **Action**: Run tests and quality checks on clause_builder module
 - **Validation Steps**:
-  1. **Import check**: `uv run python .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql.clause_builder import build_where_clause; clause = build_where_clause([('age', '>', 18)]); print('OK' if clause else 'FAIL')"`
+  1. **Import check**: `uv run .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql.clause_builder import build_where_clause; clause = build_where_clause([('age', '>', 18)]); print('OK' if clause else 'FAIL')"`
      - Expected: Prints "OK"
   2. **Test execution**: `uv run pytest tests/dataframe_toolkit/sql/test_clause_builder.py -v --cov=src/my_library/dataframe_toolkit/sql/clause_builder --cov-report=term-missing`
      - Expected: All tests pass with ≥95% coverage
@@ -192,7 +192,7 @@ Refactor the existing SQL generation logic scattered across multiple files into 
 #### Step 2.3: Validate - Verify QueryBuilder implementation
 - **Action**: Run tests and quality checks on query_builder module
 - **Validation Steps**:
-  1. **Import check**: `uv run python .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql.query_builder import QueryBuilder; sql = QueryBuilder().select('id', 'name').from_table('users').where('age > 18').build(); print('OK' if 'SELECT' in sql else 'FAIL')"`
+  1. **Import check**: `uv run .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql.query_builder import QueryBuilder; sql = QueryBuilder().select('id', 'name').from_table('users').where('age > 18').build(); print('OK' if 'SELECT' in sql else 'FAIL')"`
      - Expected: Prints "OK"
   2. **Test execution**: `uv run pytest tests/dataframe_toolkit/sql/test_query_builder.py -v --cov=src/my_library/dataframe_toolkit/sql/query_builder --cov-report=term-missing`
      - Expected: All tests pass with ≥95% coverage
@@ -245,7 +245,7 @@ Refactor the existing SQL generation logic scattered across multiple files into 
 #### Step 3.3: Validate - Verify QueryExecutor implementation
 - **Action**: Run tests and quality checks on query_executor module
 - **Validation Steps**:
-  1. **Import check**: `uv run python .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql.query_executor import QueryExecutor; print('OK')"`
+  1. **Import check**: `uv run .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql.query_executor import QueryExecutor; print('OK')"`
      - Expected: Prints "OK"
   2. **Test execution**: `uv run pytest tests/dataframe_toolkit/sql/test_query_executor.py -v --cov=src/my_library/dataframe_toolkit/sql/query_executor --cov-report=term-missing`
      - Expected: All tests pass with ≥90% coverage
@@ -255,7 +255,7 @@ Refactor the existing SQL generation logic scattered across multiple files into 
      - Expected: No errors
   5. **Docstring validation**: `uv tool run pydoclint --style=google --allow-init-docstring=True src/my_library/dataframe_toolkit/sql/query_executor.py`
      - Expected: No errors
-  6. **Module exports**: `uv run python .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql import QueryBuilder, QueryExecutor; print('OK')"`
+  6. **Module exports**: `uv run .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit.sql import QueryBuilder, QueryExecutor; print('OK')"`
      - Expected: Prints "OK"
 - **Manual Checks**:
   - Error handling is comprehensive and clear
@@ -337,7 +337,7 @@ Refactor the existing SQL generation logic scattered across multiple files into 
      - Expected: No matches found
   2. **Tests still pass**: `uv run pytest tests/dataframe_toolkit/ -v`
      - Expected: All tests pass
-  3. **Exports work**: `uv run python .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit import QueryBuilder; print('OK')"`
+  3. **Exports work**: `uv run .claude/scripts/run_python_safely.py -c "from my_library.dataframe_toolkit import QueryBuilder; print('OK')"`
      - Expected: Prints "OK"
 - **Manual Checks**:
   - sql_utils.py deleted

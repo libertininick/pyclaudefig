@@ -11,10 +11,10 @@ Runs one or more validation checks: linting (ruff check), formatting
 — a failure in one does not prevent others from running.
 
 Usage:
-    uv run python .claude/scripts/validate_code.py              # all checks
-    uv run python .claude/scripts/validate_code.py --lint       # lint only
-    uv run python .claude/scripts/validate_code.py --lint --type src/  # lint + type on src/
-    uv run python .claude/scripts/validate_code.py --test tests/unit/  # tests on specific dir
+    uv run .claude/scripts/validate_code.py              # all checks
+    uv run .claude/scripts/validate_code.py --lint       # lint only
+    uv run .claude/scripts/validate_code.py --lint --type src/  # lint + type on src/
+    uv run .claude/scripts/validate_code.py --test tests/unit/  # tests on specific dir
 
 Exit codes:
     0 - All selected checks passed

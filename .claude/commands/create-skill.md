@@ -126,7 +126,7 @@ Add the skill name to the appropriate category in `.claude/CLAUDE.md` Skills sec
 Run the manifest validation script:
 
 ```bash
-uv run python .claude/scripts/validate_manifest.py
+uv run .claude/scripts/validate_manifest.py
 ```
 
 Fix any errors before proceeding.
@@ -148,5 +148,5 @@ Test the skill:
 
 If the skill is added to an agent's `depends_on_skills` list, regenerate bundles:
 ```bash
-uv run python .claude/scripts/generate_bundles.py
+uv run .claude/scripts/generate_bundles.py
 ```

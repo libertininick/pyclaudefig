@@ -10,9 +10,9 @@ for each agent, containing all the skills they depend on. Supports layered
 skills that split content across multiple files (SKILL.md, rules.md, examples.md).
 
 Usage:
-    uv run python .claude/scripts/generate_bundles.py
-    uv run python .claude/scripts/generate_bundles.py --agent python-code-writer
-    uv run python .claude/scripts/generate_bundles.py --dry-run
+    uv run .claude/scripts/generate_bundles.py
+    uv run .claude/scripts/generate_bundles.py --agent python-code-writer
+    uv run .claude/scripts/generate_bundles.py --dry-run
 """
 
 from __future__ import annotations

@@ -63,7 +63,7 @@ For each specified phase:
    - Agent checks that docstrings, type hints, and testing conventions are properly followed
 
 4. **Validate**
-   - Run the `validate-code` skill: `uv run python .claude/scripts/validate_code.py`
+   - Run the `validate-code` skill: `uv run .claude/scripts/validate_code.py`
    - All checks must pass before proceeding
 
 5. **Clean Code (default, skip with --no-clean)**

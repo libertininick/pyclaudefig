@@ -124,7 +124,7 @@ View examples for your change type:
 Run all validation checks with a single command:
 
 ```bash
-uv run python .claude/scripts/validate_code.py
+uv run .claude/scripts/validate_code.py
 ```
 
 ### Self-Review Checklist

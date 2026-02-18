@@ -234,7 +234,7 @@ If any answer is "no", redesign the helper.
 Check complexity after refactoring via the `validate-code` skill:
 
 ```bash
-uv run python .claude/scripts/validate_code.py --lint <file>
+uv run .claude/scripts/validate_code.py --lint <file>
 ```
 
 The `--lint` flag runs `ruff check`, which includes C901 complexity checks. The refactored code should have no functions exceeding McCabe complexity of 5.

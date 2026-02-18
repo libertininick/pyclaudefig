@@ -91,7 +91,7 @@ Generate the PR description following the format from the template skill. Refere
 Use `write-markdown-output` skill with a heredoc to pass content via stdin:
 
 ```bash
-uv run python .claude/scripts/write_markdown_output.py -s "<branch-name>-pr" -o ".claude/agent-outputs/pr-descriptions" <<'CONTENT_EOF'
+uv run .claude/scripts/write_markdown_output.py -s "<branch-name>-pr" -o ".claude/agent-outputs/pr-descriptions" <<'CONTENT_EOF'
 <PR description content here>
 CONTENT_EOF
 ```

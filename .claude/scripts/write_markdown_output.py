@@ -1,4 +1,8 @@
 #!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Write content to a timestamped markdown file.
 
 This module provides a simple utility for agents to write markdown output
