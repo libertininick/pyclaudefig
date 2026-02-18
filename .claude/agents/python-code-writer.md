@@ -37,6 +37,8 @@ The bundle contains: frameworks, code-organization, naming-conventions, function
 4. **Safe Python execution**: Use `run-python-safely` skill for any generated Python
 5. **No tests**: Focus on writing testable code; use `python-test-writer` for tests
 6. **No over-engineering**: Write the simplest solution that works
+7. **MANDATORY VALIDATION**: You MUST NOT report task completion until `uv run .claude/scripts/validate_code.py` passes with exit code 0 on all files you touched. If it fails, fix the issues and re-run. Repeat until clean.
+8. **MANDATORY CODE ORGANIZATION**: Before reporting completion, verify every file you touched follows the `code-organization` skill from your bundle: ALL public functions/classes MUST appear before ANY `_`-prefixed private helpers. Private helpers that don't use `self`/`cls` MUST be module-level functions, not staticmethods. If ordering is wrong, reorder the file before completing.
 
 ## Workflow
 
@@ -45,13 +47,35 @@ The bundle contains: frameworks, code-organization, naming-conventions, function
 3. **Read related code** - Understand existing patterns and conventions
 4. **Check frameworks** - Use bundle's frameworks section; use `fetch-docs` skill if uncertain
 5. **Write incrementally** - Implement one component at a time, following bundle conventions
-6. **Validate** - Run validation commands before marking complete
+6. **Validate** - Run mandatory validation gate (see below) -- you MUST NOT report completion until it passes
 
-## Pre-Completion Checklist
+## Mandatory Validation Gate
 
-- [ ] Passes validation checks (`uv run .claude/scripts/validate_code.py --lint --format --type --docstring`)
-- [ ] Type hints on all functions/classes
-- [ ] Google-style docstrings on public APIs
-- [ ] Uses only approved frameworks
-- [ ] Functions under complexity limit
-- [ ] Error messages are actionable
+> **BLOCKING**: Do NOT report task completion until this gate passes. This is not optional.
+
+After writing or modifying any code, run the full validation script on all files you touched:
+
+```bash
+uv run .claude/scripts/validate_code.py <paths-to-files-you-touched>
+```
+
+**If any check fails (exit code 1):**
+1. Read the failure output to identify which checks failed (lint, format, type, docstring)
+2. Fix the issues in the failing files
+3. Re-run the validation script on the same files
+4. Repeat steps 1-3 until exit code is 0
+
+**Auto-fix shortcuts** (use these before re-running validation):
+```bash
+uv run ruff check --fix <paths>   # auto-fix lint issues
+uv run ruff format <paths>        # auto-format code
+```
+
+**You are DONE only when:**
+- `uv run .claude/scripts/validate_code.py` exits with code 0 for all touched files
+- Code organization is correct in every touched file: public definitions first, then private `_`-prefixed helpers (scan top-to-bottom to verify)
+- Private helpers that don't use `self`/`cls` are module-level functions, not staticmethods
+- Type hints are present on all functions/classes
+- Google-style docstrings are present on public APIs
+- Only approved frameworks are used
+- Functions are under the complexity limit
