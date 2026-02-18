@@ -33,7 +33,7 @@ Determine which files to review based on arguments, then classify them:
 
 ### Phase 2: Run Tests (if test files in scope)
 
-If test files are being reviewed, execute `uv run pytest <test-files> -v` to verify tests pass before reviewing. For full validation, use `uv run python .claude/scripts/validate_code.py`.
+If test files are being reviewed, execute `uv run pytest <test-files> -v` to verify tests pass before reviewing. For full validation, use `uv run .claude/scripts/validate_code.py`.
 
 ### Phase 3: Launch Reviews (parallel)
 
@@ -62,7 +62,7 @@ After all reviews complete:
 5. **Use `write-markdown-output` skill** to write the unified report:
 
 ```bash
-uv run python .claude/scripts/write_markdown_output.py -s "<scope>-review" -o ".claude/agent-outputs/reviews" <<'CONTENT_EOF'
+uv run .claude/scripts/write_markdown_output.py -s "<scope>-review" -o ".claude/agent-outputs/reviews" <<'CONTENT_EOF'
 <aggregated review content here>
 CONTENT_EOF
 ```

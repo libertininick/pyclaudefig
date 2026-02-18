@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Synchronize Claude context files with actual skills, agents, and commands on disk.
 
 This script:
@@ -795,7 +799,7 @@ def _generate_bundles_section(agents: dict[str, AgentInfo]) -> str:
             "",
             "**Regenerate bundles** after modifying skills:",
             "```bash",
-            "uv run python .claude/scripts/generate_bundles.py",
+            "uv run .claude/scripts/generate_bundles.py",
             "```",
         ]
     )

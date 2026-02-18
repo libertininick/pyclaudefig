@@ -115,9 +115,9 @@ When applicable, show how to verify compliance using the `validate-code` skill:
 
 Run checks via the `validate-code` skill:
 ```bash
-uv run python .claude/scripts/validate_code.py                    # all checks
-uv run python .claude/scripts/validate_code.py --lint --type      # specific checks
-uv run python .claude/scripts/validate_code.py --docstring <path> # scoped to path
+uv run .claude/scripts/validate_code.py                    # all checks
+uv run .claude/scripts/validate_code.py --lint --type      # specific checks
+uv run .claude/scripts/validate_code.py --docstring <path> # scoped to path
 ```
 ```
 
@@ -205,7 +205,7 @@ Add the skill name to the appropriate category in `.claude/CLAUDE.md`:
 If the skill is added to any agent's `depends_on` list in manifest.json, regenerate bundles:
 
 ```bash
-uv run python .claude/scripts/generate_bundles.py
+uv run .claude/scripts/generate_bundles.py
 ```
 
 **Note**: Only add skills to agent `depends_on` lists if the agent needs that skill's context. Most new skills won't need this step.

@@ -19,7 +19,7 @@ This is a CRITICAL RULE for all agents in this repository. Before running Python
 
 **Exceptions** (when you can skip this skill):
 - Running tests via `uv run pytest`
-- Running validation via `uv run python .claude/scripts/validate_code.py`
+- Running validation via `uv run .claude/scripts/validate_code.py`
 - Running standard CLI commands (e.g., `ruff format`, `ty check`)
 - User-provided scripts that have already been reviewed
 
@@ -33,13 +33,13 @@ Use this skill when you need to run Python code that you've generated. The skill
 
 ```bash
 # Execute inline code
-uv run python .claude/scripts/run_python_safely.py -c "print(2 + 2)"
+uv run .claude/scripts/run_python_safely.py -c "print(2 + 2)"
 
 # Execute code from file
-uv run python .claude/scripts/run_python_safely.py -f script.py
+uv run .claude/scripts/run_python_safely.py -f script.py
 
 # Execute with custom timeout (in seconds)
-uv run python .claude/scripts/run_python_safely.py -t 60 -c "print('done')"
+uv run .claude/scripts/run_python_safely.py -t 60 -c "print('done')"
 ```
 
 ## Exit Codes

@@ -20,7 +20,7 @@ Use this skill after modifying the manifest:
 Run the validation script:
 
 ```bash
-uv run python .claude/scripts/validate_manifest.py
+uv run .claude/scripts/validate_manifest.py
 ```
 
 **Exit codes:**
@@ -72,7 +72,7 @@ Optional command fields: `depends_on_skills`, `depends_on_agents`
 1. **Make changes** to manifest.json
 2. **Run validation**:
    ```bash
-   uv run python .claude/scripts/validate_manifest.py
+   uv run .claude/scripts/validate_manifest.py
    ```
 3. **Fix any errors** reported to stderr
 4. **Repeat** until validation passes
@@ -89,5 +89,5 @@ Optional command fields: `depends_on_skills`, `depends_on_agents`
 
 Then validate:
 ```bash
-uv run python .claude/scripts/validate_manifest.py
+uv run .claude/scripts/validate_manifest.py
 ```

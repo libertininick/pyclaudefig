@@ -187,5 +187,5 @@ def update_status(task_id: int, status: Status) -> None:
 
 Run type checking via the `validate-code` skill:
 ```bash
-uv run python .claude/scripts/validate_code.py --type <path>
+uv run .claude/scripts/validate_code.py --type <path>
 ```

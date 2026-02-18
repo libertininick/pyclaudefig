@@ -9,7 +9,7 @@ This script validates the structure and contents of the manifest.json file,
 checking for required fields, valid references, and correct formatting.
 
 Usage:
-    uv run python .claude/scripts/validate_manifest.py
+    uv run .claude/scripts/validate_manifest.py
 
 Exit codes:
     0 - Manifest is valid

@@ -653,7 +653,7 @@ def test_cli_version():
 
 For full validation (lint + format + type + docstring + tests), use the `validate-code` skill:
 ```bash
-uv run python .claude/scripts/validate_code.py
+uv run .claude/scripts/validate_code.py
 ```
 
 For test-specific commands during development:

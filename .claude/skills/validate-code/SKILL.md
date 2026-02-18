@@ -24,19 +24,19 @@ Run code validation checks via a single centralized script. All checks run indep
 
 ```bash
 # Run all checks on project root
-uv run python .claude/scripts/validate_code.py
+uv run .claude/scripts/validate_code.py
 
 # Run specific checks
-uv run python .claude/scripts/validate_code.py --lint --type
+uv run .claude/scripts/validate_code.py --lint --type
 
 # Run on specific path
-uv run python .claude/scripts/validate_code.py --lint src/chain_reaction/
+uv run .claude/scripts/validate_code.py --lint src/chain_reaction/
 
 # Run on specific file
-uv run python .claude/scripts/validate_code.py --docstring src/chain_reaction/utils/parser.py
+uv run .claude/scripts/validate_code.py --docstring src/chain_reaction/utils/parser.py
 
 # Run tests on specific directory
-uv run python .claude/scripts/validate_code.py --test tests/unit/
+uv run .claude/scripts/validate_code.py --test tests/unit/
 ```
 
 ## Exit Codes

@@ -56,7 +56,7 @@ Before writing any plan:
 ### 5. Write the Plan
 Use `write-markdown-output` skill with a heredoc to pass content via stdin:
 ```bash
-uv run python .claude/scripts/write_markdown_output.py -s "<scope>-plan" -o ".claude/agent-outputs/plans" <<'CONTENT_EOF'
+uv run .claude/scripts/write_markdown_output.py -s "<scope>-plan" -o ".claude/agent-outputs/plans" <<'CONTENT_EOF'
 <plan content here>
 CONTENT_EOF
 ```

@@ -194,7 +194,7 @@ The `/plan` command dispatches to the **planner agent** which creates a detailed
 2. Edge case coverage
 
 #### Validation
-- [ ] `uv run python .claude/scripts/validate_code.py`
+- [ ] `uv run .claude/scripts/validate_code.py`
 
 #### Done When
 - Specific completion criteria
@@ -254,7 +254,7 @@ The `/implement` command orchestrates multiple agents to build a single phase.
 
 **Validation commands run automatically via the validate script:**
 ```bash
-uv run python .claude/scripts/validate_code.py
+uv run .claude/scripts/validate_code.py
 ```
 
 ### Step 2b: Review with `/review`
@@ -534,13 +534,13 @@ These run automatically during `/implement` and should pass before committing:
 
 ```bash
 # Run all checks (lint, format, type, docstring, tests)
-uv run python .claude/scripts/validate_code.py
+uv run .claude/scripts/validate_code.py
 
 # Run specific checks
-uv run python .claude/scripts/validate_code.py --lint --type
+uv run .claude/scripts/validate_code.py --lint --type
 
 # Run on specific path
-uv run python .claude/scripts/validate_code.py --lint src/
+uv run .claude/scripts/validate_code.py --lint src/
 ```
 
 See the `validate-code` skill for full usage and flags.

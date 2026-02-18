@@ -49,7 +49,7 @@ The bundle contains: frameworks, code-organization, naming-conventions, function
 
 ## Pre-Completion Checklist
 
-- [ ] Passes validation checks (`uv run python .claude/scripts/validate_code.py --lint --format --type --docstring`)
+- [ ] Passes validation checks (`uv run .claude/scripts/validate_code.py --lint --format --type --docstring`)
 - [ ] Type hints on all functions/classes
 - [ ] Google-style docstrings on public APIs
 - [ ] Uses only approved frameworks

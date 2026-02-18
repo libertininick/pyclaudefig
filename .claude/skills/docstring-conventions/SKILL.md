@@ -210,10 +210,10 @@ def add_vectors(a: list[float], b: list[float]) -> list[float]:
 
 Run docstring checks via the `validate-code` skill:
 ```bash
-uv run python .claude/scripts/validate_code.py --docstring <path>
+uv run .claude/scripts/validate_code.py --docstring <path>
 ```
 
 For doctest examples specifically:
 ```bash
-uv run python .claude/scripts/validate_code.py --doctest <path>
+uv run .claude/scripts/validate_code.py --doctest <path>
 ```

@@ -1,3 +1,8 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Safety guardrail for agent-executed Python code.
 
 This module provides static AST analysis to detect potentially dangerous

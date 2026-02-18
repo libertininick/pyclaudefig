@@ -89,11 +89,11 @@ git ls-files "*.py"
 3. **Process each file**:
    - Read and analyze
    - Apply fixes (unless --dry-run)
-   - Validate with `validate-code` skill: `uv run python .claude/scripts/validate_code.py`
+   - Validate with `validate-code` skill: `uv run .claude/scripts/validate_code.py`
 4. **Report results** - Summary of changes/findings
 
 ## After Cleaning
 
 - Review changes with `git diff`
-- Run full validation: `uv run python .claude/scripts/validate_code.py`
+- Run full validation: `uv run .claude/scripts/validate_code.py`
 - Commit cleaned code
