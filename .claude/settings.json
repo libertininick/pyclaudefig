@@ -31,7 +31,11 @@
       "Read(*.claude/**)",
       "Glob(*.claude/**)",
       "Grep(*.claude/**)",
-      "Write(*.claude/agent-outputs/**/*.md)"
+      "Write(*.claude/agent-outputs/**/*.md)",
+      "Read(.claude/**)",
+      "Glob(.claude/**)",
+      "Grep(.claude/**)",
+      "Write(.claude/agent-outputs/**/*.md)"
     ],
     "deny": [
       "Bash(rm -rf /)",
