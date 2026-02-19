@@ -29,6 +29,9 @@ This configuration assumes you already have:
 
    # Move .claude directory to root of project and remove remaining items from download
    mv libertininick-pyclaudefig-*/.claude ./ && rm -rf libertininick-pyclaudefig-*
+
+   # Allow scripts to be executed
+   chmod +x .claude/scripts/*.py
    ```
 
 2. **Connect the Context7 MCP server** to Claude Code
