@@ -54,6 +54,41 @@ def function_name(param1: Type1, param2: Type2) -> ReturnType:
 | Raises | **Always** if function raises exceptions |
 | Examples | When usage isn't obvious from signature |
 
+## Inline Code Formatting
+
+Use **single backticks** for inline code references in docstrings. Do NOT use rST-style double backticks.
+
+```python
+# CORRECT - single backticks
+"""Calculate the distance between `point_a` and `point_b`.
+
+Args:
+    point_a (Point): The starting `Point` instance.
+    point_b (Point): The ending `Point` instance.
+
+Returns:
+    float: Euclidean distance. Returns `0.0` if points are identical.
+
+Raises:
+    TypeError: If `point_a` or `point_b` is not a `Point`.
+"""
+
+# INCORRECT - rST-style double backticks
+"""Calculate the distance between ``point_a`` and ``point_b``.
+
+Args:
+    point_a (Point): The starting ``Point`` instance.
+"""
+```
+
+| Pattern | Convention |
+|---------|------------|
+| Parameter names | `` `param_name` `` |
+| Class/type names | `` `ClassName` `` |
+| Return values | `` `None` ``, `` `True` ``, `` `0.0` `` |
+| Method/function names | `` `method_name()` `` |
+| rST double backticks | **Never use** ` `` `` ` in docstrings |
+
 ### Complete Example
 
 ```python
