@@ -532,3 +532,106 @@ try:
 except (ValueError, TypeError) as e:
     handle_error(e)
 ```
+
+---
+
+## Modern Generics (PEP 695)
+
+### Generic Functions
+
+```python
+from collections.abc import Sequence
+
+# INCORRECT - old-style TypeVar
+from typing import TypeVar
+
+T = TypeVar("T")
+
+def first(items: Sequence[T]) -> T | None:
+    return items[0] if items else None
+
+# CORRECT - PEP 695 inline syntax (Python 3.12+)
+def first[T](items: Sequence[T]) -> T | None:
+    return items[0] if items else None
+
+# CORRECT - multiple type parameters
+def merge_dicts[K, V](a: dict[K, V], b: dict[K, V]) -> dict[K, V]:
+    return {**a, **b}
+```
+
+### Generic Classes
+
+```python
+# INCORRECT - old-style TypeVar
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+class Stack(Generic[T]):
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        return self._items.pop()
+
+# CORRECT - PEP 695 syntax
+class Stack[T]:
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        return self._items.pop()
+```
+
+### Type Aliases
+
+```python
+# INCORRECT - old-style TypeAlias
+from typing import TypeAlias
+
+Vector: TypeAlias = list[float]
+
+# CORRECT - PEP 695 type statement
+type Vector = list[float]
+type Matrix[T] = list[list[T]]
+type JsonValue = str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
+```
+
+### Bounded Type Parameters
+
+```python
+# CORRECT - bounded type parameter
+def process[T: (str, bytes)](data: T) -> T:
+    ...
+```
+
+### ParamSpec and TypeVarTuple
+
+```python
+from collections.abc import Callable
+
+# CORRECT - ParamSpec with PEP 695
+def decorator[**P, R](fn: Callable[P, R]) -> Callable[P, R]:
+    ...
+
+# CORRECT - TypeVarTuple with PEP 695
+def zip_args[*Ts](*args: *Ts) -> tuple[*Ts]:
+    ...
+```
+
+### TypeVar Naming
+
+```python
+# CORRECT - clean names in application code
+def transform[T](item: T) -> T: ...
+def map_values[K, V](data: dict[K, V]) -> list[V]: ...
+
+# CORRECT - underscored names only in .pyi stubs or internal type-checking plumbing
+_T = TypeVar("_T")  # Only in .pyi files
+```

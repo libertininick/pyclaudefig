@@ -29,6 +29,7 @@ Essential Python idioms that make code more readable, concise, and efficient.
 | Walrus operator (`:=`) | Separate assignment + condition |
 | Generator expressions | List comprehension when iterating once |
 | `defaultdict` / `Counter` | Manual dict initialization |
+| Modern generics (`[T]` syntax) | `TypeVar` declarations |
 
 For rules: see `rules.md`
 For examples: see `examples.md`
