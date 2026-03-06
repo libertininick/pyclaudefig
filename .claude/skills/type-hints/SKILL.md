@@ -16,8 +16,8 @@ user-invocable: false
 | Input collections | `Sequence`, `Mapping`, `Iterable` | `items: Sequence[str]` |
 | Return collections | `list`, `dict` | `-> list[str]` |
 | Generic containers | Lowercase builtins | `list[str]`, `dict[str, int]` |
-| Type variables | Single uppercase letters | `T`, `K`, `V` |
-| Type aliases | `TypeAlias` annotation | `UserId: TypeAlias = int` |
+| Type variables | Inline `[T]` syntax (PEP 695) | `def first[T](...)` |
+| Type aliases | `type` statement (PEP 695) | `type UserId = int` |
 | Constrained strings | `Literal` | `Status = Literal["active", "pending"]` |
 | Dict structures | `TypedDict` | For API responses and configs |
 | Fluent methods | `Self` | For builder patterns |
@@ -78,23 +78,49 @@ def transform(items: list[str]) -> list[str]:  # Rejects tuples, other sequences
     ...
 ```
 
-## Generic Types
+## Generic Types (PEP 695, Python 3.12+)
+
+Use inline `[T]` type parameter syntax instead of explicit `TypeVar` declarations:
 
 ```python
-from typing import TypeVar
 from collections.abc import Sequence
 
-T = TypeVar("T")
-K = TypeVar("K")
-V = TypeVar("V")
-
-def first(items: Sequence[T]) -> T | None:
+# CORRECT - PEP 695 inline syntax
+def first[T](items: Sequence[T]) -> T | None:
     """Return the first item or None if empty."""
     return items[0] if items else None
 
-def merge_dicts(a: dict[K, V], b: dict[K, V]) -> dict[K, V]:
+def merge_dicts[K, V](a: dict[K, V], b: dict[K, V]) -> dict[K, V]:
     """Merge two dictionaries, with b taking precedence."""
     return {**a, **b}
+
+class Stack[T]:
+    """Generic stack with proper typing."""
+
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        return self._items.pop()
+
+# Bounded type parameters
+def process[T: (str, bytes)](data: T) -> T: ...
+
+# ParamSpec
+from collections.abc import Callable
+def decorator[**P, R](fn: Callable[P, R]) -> Callable[P, R]: ...
+
+# TypeVarTuple
+def zip_args[*Ts](*args: *Ts) -> tuple[*Ts]: ...
+
+# INCORRECT - old-style TypeVar declarations
+from typing import TypeVar
+T = TypeVar("T")
+def first(items: Sequence[T]) -> T | None:  # Don't use
+    ...
 ```
 
 ## Self Type (Python 3.11+)
@@ -140,21 +166,28 @@ def process_stream(stream: Readable & Closeable) -> str:
         stream.close()
 ```
 
-## Type Aliases
+## Type Aliases (PEP 695, Python 3.12+)
+
+Use the `type` statement instead of `TypeAlias`:
 
 ```python
-from typing import TypeAlias
+# CORRECT - PEP 695 type statement
+type UserId = int
+type Embedding = list[float]
+type BatchEmbeddings = list[Embedding]
 
-# Simple aliases
-UserId: TypeAlias = int
-Embedding: TypeAlias = list[float]
-BatchEmbeddings: TypeAlias = list[Embedding]
+# Generic type aliases
+type Matrix[T] = list[list[T]]
 
-# Recursive aliases (use forward references)
-JsonValue: TypeAlias = str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
+# Recursive aliases (no forward references needed with type statement)
+type JsonValue = str | int | float | bool | None | list[JsonValue] | dict[str, JsonValue]
 
 def encode(texts: list[str]) -> BatchEmbeddings:
     ...
+
+# INCORRECT - old-style TypeAlias
+from typing import TypeAlias
+UserId: TypeAlias = int  # Don't use
 ```
 
 ## TypedDict for JSON-like Structures

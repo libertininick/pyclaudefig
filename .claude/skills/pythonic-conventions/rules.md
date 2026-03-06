@@ -16,6 +16,7 @@ Essential Python idioms. For examples, see `examples.md`.
 | Walrus operator (`:=`) | Separate assignment + condition |
 | Generator expressions | List comprehension when iterating once |
 | `defaultdict` / `Counter` | Manual dict initialization |
+| Modern generics (`[T]` syntax) | `TypeVar` declarations |
 
 ---
 
@@ -146,3 +147,33 @@ value = x if condition else y
 
 - **EAFP** (Easier to Ask Forgiveness): Try/except over if checks
 - **Specific exceptions**: Catch `ValueError`, not bare `except:`
+
+---
+
+## Generics (PEP 695)
+
+**Use modern PEP 695 type parameter syntax (Python 3.12+)** instead of explicit `TypeVar` declarations.
+
+| Pattern | Syntax | Example |
+|---------|--------|---------|
+| Generic function | `def name[T](...)` | `def first[T](items: Sequence[T]) -> T` |
+| Generic class | `class Name[T]` | `class Stack[T]` |
+| Type alias | `type Name = ...` | `type Vector = list[float]` |
+| Generic alias | `type Name[T] = ...` | `type Matrix[T] = list[list[T]]` |
+| Bounded type | `[T: (str, bytes)]` | `def process[T: (str, bytes)](data: T) -> T` |
+| ParamSpec | `[**P]` | `def decorator[**P, R](fn: Callable[P, R])` |
+| TypeVarTuple | `[*Ts]` | `def zip_args[*Ts](*args: *Ts)` |
+
+### Naming
+
+- Use `T`, `K`, `V`, `R`, `P` in application code (no underscores)
+- Use `_T`, `_P` only in `.pyi` stub files or internal type-checking plumbing
+
+### Type Aliases
+
+Use the `type` statement (PEP 695), not `TypeAlias`:
+
+```python
+type UserId = int
+type Matrix[T] = list[list[T]]
+```
