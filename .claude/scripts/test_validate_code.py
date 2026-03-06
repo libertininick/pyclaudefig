@@ -20,9 +20,7 @@ from pytest_check import check
 _SCRIPT_PATH = str(Path(__file__).resolve().parent / "validate_code.py")
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+# region Fixtures
 
 
 @pytest.fixture
@@ -70,9 +68,9 @@ def multi_failing_file(tmp_path: Path) -> str:
     return str(f)
 
 
-# ---------------------------------------------------------------------------
-# Check Functions — real subprocess, no mocking
-# ---------------------------------------------------------------------------
+# endregion
+
+# region Check Functions — real subprocess, no mocking
 
 
 class TestCheckFunctions:
@@ -125,9 +123,9 @@ class TestCheckFunctions:
         assert validate_code.run_docstring_check([str(f)]) is True
 
 
-# ---------------------------------------------------------------------------
-# CHECK_REGISTRY — structural validation, no subprocess
-# ---------------------------------------------------------------------------
+# endregion
+
+# region CHECK_REGISTRY — structural validation, no subprocess
 
 
 class TestCheckRegistry:
@@ -149,9 +147,9 @@ class TestCheckRegistry:
                 assert callable(func), f"Check '{key}' should have a callable function"
 
 
-# ---------------------------------------------------------------------------
-# run_checks — orchestration logic, real subprocess (1 mock for exception)
-# ---------------------------------------------------------------------------
+# endregion
+
+# region run_checks — orchestration logic, real subprocess (1 mock for exception)
 
 
 class TestRunChecks:
@@ -216,9 +214,9 @@ class TestRunChecks:
             validate_code.run_checks(["lint"], ["."])
 
 
-# ---------------------------------------------------------------------------
-# CLI — real subprocess invocations, no mocking
-# ---------------------------------------------------------------------------
+# endregion
+
+# region CLI — real subprocess invocations, no mocking
 
 
 class TestCli:
@@ -359,3 +357,6 @@ class TestCli:
         )
 
         assert result.returncode == validate_code.EXIT_SUCCESS
+
+
+# endregion

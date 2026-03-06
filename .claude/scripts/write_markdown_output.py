@@ -35,27 +35,24 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Final, TextIO
 
-# =============================================================================
-# Exit Codes
-# =============================================================================
+# region Exit Codes
 
 EXIT_SUCCESS: Final[int] = 0
 EXIT_WRITE_ERROR: Final[int] = 1
 EXIT_USAGE_ERROR: Final[int] = 2
 
+# endregion
 
-# =============================================================================
-# Exceptions
-# =============================================================================
+# region Exceptions
 
 
 class WriteError(Exception):
     """Raised when file cannot be written."""
 
 
-# =============================================================================
-# Public API
-# =============================================================================
+# endregion
+
+# region Public API
 
 
 def generate_timestamp(*, now: datetime | None = None) -> str:
@@ -122,9 +119,9 @@ def write_markdown_output(
     return file_path
 
 
-# =============================================================================
-# CLI
-# =============================================================================
+# endregion
+
+# region CLI
 
 
 def main(*, argv: list[str] | None = None, stdin: TextIO | None = None) -> int:
@@ -203,6 +200,9 @@ Exit codes:
     )
 
     return parser
+
+
+# endregion
 
 
 if __name__ == "__main__":

@@ -18,9 +18,7 @@ import pytest
 import yaml
 from pytest_check import check
 
-# ============================================================================
-# Fixtures
-# ============================================================================
+# region Fixtures
 
 
 @pytest.fixture
@@ -136,9 +134,9 @@ def bundles_dir(tmp_path: Path) -> Path:
     return bundles
 
 
-# ============================================================================
-# Test: load_manifest
-# ============================================================================
+# endregion
+
+# region Test: load_manifest
 
 
 class TestLoadManifest:
@@ -191,9 +189,9 @@ class TestLoadManifest:
             generate_bundles.load_manifest(manifest_path=bad_manifest)
 
 
-# ============================================================================
-# Test: SkillContent Dataclass
-# ============================================================================
+# endregion
+
+# region Test: SkillContent Dataclass
 
 
 class TestSkillContent:
@@ -225,9 +223,9 @@ class TestSkillContent:
         assert has_layers is True
 
 
-# ============================================================================
-# Test: _parse_frontmatter
-# ============================================================================
+# endregion
+
+# region Test: _parse_frontmatter
 
 
 class TestParseFrontmatter:
@@ -294,9 +292,9 @@ class TestParseFrontmatter:
         assert frontmatter == {}
 
 
-# ============================================================================
-# Test: _remove_frontmatter
-# ============================================================================
+# endregion
+
+# region Test: _remove_frontmatter
 
 
 class TestRemoveFrontmatter:
@@ -357,9 +355,9 @@ class TestRemoveFrontmatter:
         assert cleaned == content
 
 
-# ============================================================================
-# Test: _load_layer_files
-# ============================================================================
+# endregion
+
+# region Test: _load_layer_files
 
 
 class TestLoadLayerFiles:
@@ -428,9 +426,9 @@ class TestLoadLayerFiles:
             assert "examples" not in layers
 
 
-# ============================================================================
-# Test: load_skill_content
-# ============================================================================
+# endregion
+
+# region Test: load_skill_content
 
 
 class TestLoadSkillContent:
@@ -497,9 +495,9 @@ class TestLoadSkillContent:
         assert skill is None
 
 
-# ============================================================================
-# Test: extract_quick_reference
-# ============================================================================
+# endregion
+
+# region Test: extract_quick_reference
 
 
 class TestExtractQuickReference:
@@ -553,9 +551,9 @@ class TestExtractQuickReference:
             assert "| X | Y |" in quick_ref
 
 
-# ============================================================================
-# Test: _order_layers
-# ============================================================================
+# endregion
+
+# region Test: _order_layers
 
 
 class TestOrderLayers:
@@ -621,9 +619,9 @@ class TestOrderLayers:
         assert ordered[0] == ("rules", "R content")
 
 
-# ============================================================================
-# Test: _format_layers
-# ============================================================================
+# endregion
+
+# region Test: _format_layers
 
 
 class TestFormatLayers:
@@ -667,9 +665,9 @@ class TestFormatLayers:
         assert rules_pos < examples_pos
 
 
-# ============================================================================
-# Test: _build_bundle_header
-# ============================================================================
+# endregion
+
+# region Test: _build_bundle_header
 
 
 class TestBuildBundleHeader:
@@ -696,9 +694,9 @@ class TestBuildBundleHeader:
             assert "---" in joined
 
 
-# ============================================================================
-# Test: _build_table_of_contents
-# ============================================================================
+# endregion
+
+# region Test: _build_table_of_contents
 
 
 class TestBuildTableOfContents:
@@ -742,9 +740,9 @@ class TestBuildTableOfContents:
             assert "**missing-skill**: " in joined
 
 
-# ============================================================================
-# Test: _format_skill_section
-# ============================================================================
+# endregion
+
+# region Test: _format_skill_section
 
 
 class TestFormatSkillSection:
@@ -839,9 +837,9 @@ class TestFormatSkillSection:
             assert "---" in joined
 
 
-# ============================================================================
-# Test: generate_bundle
-# ============================================================================
+# endregion
+
+# region Test: generate_bundle
 
 
 class TestGenerateBundle:
@@ -961,9 +959,9 @@ class TestGenerateBundle:
             assert "Warning: Skill not found: nonexistent-skill" in captured.out
 
 
-# ============================================================================
-# Test: _build_skills_lookup
-# ============================================================================
+# endregion
+
+# region Test: _build_skills_lookup
 
 
 class TestBuildSkillsLookup:
@@ -1015,9 +1013,9 @@ class TestBuildSkillsLookup:
         assert lookup == {}
 
 
-# ============================================================================
-# Test: _write_bundle
-# ============================================================================
+# endregion
+
+# region Test: _write_bundle
 
 
 class TestWriteBundle:
@@ -1064,9 +1062,9 @@ class TestWriteBundle:
         assert "bundles/agent.md" in captured.out
 
 
-# ============================================================================
-# Test: _process_agent
-# ============================================================================
+# endregion
+
+# region Test: _process_agent
 
 
 class TestProcessAgent:
@@ -1160,9 +1158,9 @@ class TestProcessAgent:
             assert "<!-- skill: simple-skill -->" not in compact_content
 
 
-# ============================================================================
-# Test: generate_all_bundles
-# ============================================================================
+# endregion
+
+# region Test: generate_all_bundles
 
 
 class TestGenerateAllBundles:
@@ -1344,9 +1342,9 @@ class TestGenerateAllBundles:
             assert (bundles_dir / "agent-two-compact.md").exists()
 
 
-# ============================================================================
-# Test: _parse_args
-# ============================================================================
+# endregion
+
+# region Test: _parse_args
 
 
 class TestParseArgs:
@@ -1391,9 +1389,9 @@ class TestParseArgs:
             assert args.agent == "my-agent"
 
 
-# ============================================================================
-# Test: main
-# ============================================================================
+# endregion
+
+# region Test: main
 
 
 class TestMain:
@@ -1452,3 +1450,6 @@ class TestMain:
         # Assert
         bundle_files = list(bundles_dir.glob("*.md"))
         assert bundle_files == []
+
+
+# endregion

@@ -34,9 +34,7 @@ from run_python_safely import (
     format_issues,
 )
 
-# ============================================================================
-# Fixtures
-# ============================================================================
+# region Fixtures
 
 
 @pytest.fixture
@@ -51,9 +49,9 @@ def script_path() -> Path:
     return Path(__file__).parent / "run_python_safely.py"
 
 
-# ============================================================================
-# TestCheckCodeImports
-# ============================================================================
+# endregion
+
+# region TestCheckCodeImports
 
 
 class TestCheckCodeImports:
@@ -125,9 +123,9 @@ class TestCheckCodeImports:
         assert issues[0].name == "os"
 
 
-# ============================================================================
-# TestCheckCodeBuiltins
-# ============================================================================
+# endregion
+
+# region TestCheckCodeBuiltins
 
 
 class TestCheckCodeBuiltins:
@@ -218,9 +216,9 @@ class TestCheckCodeBuiltins:
         assert names == {"eval", "exec"}
 
 
-# ============================================================================
-# TestCheckCodeBuiltinAliases
-# ============================================================================
+# endregion
+
+# region TestCheckCodeBuiltinAliases
 
 
 class TestCheckCodeBuiltinAliases:
@@ -306,9 +304,9 @@ class TestCheckCodeBuiltinAliases:
         assert len(issues) == 0
 
 
-# ============================================================================
-# TestCheckCodeMethods
-# ============================================================================
+# endregion
+
+# region TestCheckCodeMethods
 
 
 class TestCheckCodeMethods:
@@ -394,9 +392,9 @@ class TestCheckCodeMethods:
         assert issues[0].name == "unlink"
 
 
-# ============================================================================
-# TestCheckCodeMethodReferences
-# ============================================================================
+# endregion
+
+# region TestCheckCodeMethodReferences
 
 
 class TestCheckCodeMethodReferences:
@@ -466,9 +464,9 @@ class TestCheckCodeMethodReferences:
         assert issues[0].name == blocked_method
 
 
-# ============================================================================
-# TestCheckCodeRelativeImports
-# ============================================================================
+# endregion
+
+# region TestCheckCodeRelativeImports
 
 
 class TestCheckCodeRelativeImports:
@@ -508,9 +506,9 @@ class TestCheckCodeRelativeImports:
         assert issues[0].name == "os"
 
 
-# ============================================================================
-# TestCheckCodeSyntax
-# ============================================================================
+# endregion
+
+# region TestCheckCodeSyntax
 
 
 class TestCheckCodeSyntax:
@@ -544,9 +542,9 @@ class TestCheckCodeSyntax:
         assert len(issues) == 0
 
 
-# ============================================================================
-# TestCheckCodeCombined
-# ============================================================================
+# endregion
+
+# region TestCheckCodeCombined
 
 
 class TestCheckCodeCombined:
@@ -587,9 +585,9 @@ print(result)
         assert len(issues) == 0
 
 
-# ============================================================================
-# TestFormatIssues
-# ============================================================================
+# endregion
+
+# region TestFormatIssues
 
 
 class TestFormatIssues:
@@ -635,9 +633,9 @@ class TestFormatIssues:
         assert result == "  - Syntax: SyntaxError (unexpected EOF)"
 
 
-# ============================================================================
-# TestCLICodeString
-# ============================================================================
+# endregion
+
+# region TestCLICodeString
 
 
 class TestCLICodeString:
@@ -710,9 +708,9 @@ class TestCLICodeString:
         assert "Syntax" in result.stdout
 
 
-# ============================================================================
-# TestCLIFileInput
-# ============================================================================
+# endregion
+
+# region TestCLIFileInput
 
 
 class TestCLIFileInput:
@@ -772,9 +770,9 @@ class TestCLIFileInput:
         assert "Syntax" in result.stdout
 
 
-# ============================================================================
-# TestCLIEdgeCases
-# ============================================================================
+# endregion
+
+# region TestCLIEdgeCases
 
 
 class TestCLIEdgeCases:
@@ -948,9 +946,9 @@ print(greet())
         assert EXECUTION_TIMEOUT_SECONDS == 300
 
 
-# ============================================================================
-# TestReadCodeFromFile
-# ============================================================================
+# endregion
+
+# region TestReadCodeFromFile
 
 
 class TestReadCodeFromFile:
@@ -1013,9 +1011,9 @@ class TestReadCodeFromFile:
         assert len(result.exec_args) == 2
 
 
-# ============================================================================
-# TestSafetyIssueDataclass
-# ============================================================================
+# endregion
+
+# region TestSafetyIssueDataclass
 
 
 class TestSafetyIssueDataclass:
@@ -1040,9 +1038,9 @@ class TestSafetyIssueDataclass:
         assert issue in issue_set
 
 
-# ============================================================================
-# TestIssueCategoryEnum
-# ============================================================================
+# endregion
+
+# region TestIssueCategoryEnum
 
 
 class TestIssueCategoryEnum:
@@ -1061,3 +1059,6 @@ class TestIssueCategoryEnum:
         Intentionally fragile: forces test update when new categories are added.
         """
         assert len(IssueCategory) == 4
+
+
+# endregion
