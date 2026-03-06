@@ -88,6 +88,23 @@ Args:
 | Return values | `` `None` ``, `` `True` ``, `` `0.0` `` |
 | Method/function names | `` `method_name()` `` |
 | rST double backticks | **Never use** ` `` `` ` in docstrings |
+| rST role tags | **Never use** `:class:`, `:meth:`, `:func:`, `:attr:`, etc. |
+
+```python
+# CORRECT - plain backtick references
+"""Parse the response into a `SearchResult`.
+
+Delegates to `ResponseParser.parse()` for deserialization.
+Call `validate_response()` before using this function.
+"""
+
+# INCORRECT - rST role tags
+"""Parse the response into a :class:`SearchResult`.
+
+Delegates to :meth:`ResponseParser.parse()` for deserialization.
+Call :func:`validate_response` before using this function.
+"""
+```
 
 ### Complete Example
 
@@ -113,6 +130,15 @@ def calculate_similarity(embedding_a: list[float], embedding_b: list[float]) -> 
         1.0
     """
 ```
+
+## Line Length
+
+Docstring lines are allowed to extend to **120 characters**. Do not wrap docstring prose at 79 or 88 characters.
+
+| Context | Max line length |
+|---------|----------------|
+| Docstring prose | 120 characters |
+| Code examples in docstrings | 120 characters |
 
 ## Class Docstring Structure
 
