@@ -17,9 +17,7 @@ import pytest
 import validate_manifest
 from pytest_check import check
 
-# ============================================================================
-# Fixtures
-# ============================================================================
+# region Fixtures
 
 
 @pytest.fixture
@@ -80,9 +78,9 @@ def manifest_file(tmp_path: Path, valid_manifest: dict[str, Any]) -> Path:
     return manifest_path
 
 
-# ============================================================================
-# Test: Valid Manifest
-# ============================================================================
+# endregion
+
+# region Test: Valid Manifest
 
 
 class TestValidManifest:
@@ -130,9 +128,9 @@ class TestValidManifest:
         assert errors == []
 
 
-# ============================================================================
-# Test: Invalid JSON Syntax
-# ============================================================================
+# endregion
+
+# region Test: Invalid JSON Syntax
 
 
 class TestInvalidJsonSyntax:
@@ -185,9 +183,9 @@ class TestInvalidJsonSyntax:
         assert result == valid_manifest
 
 
-# ============================================================================
-# Test: Missing Required Fields
-# ============================================================================
+# endregion
+
+# region Test: Missing Required Fields
 
 
 class TestMissingRequiredFields:
@@ -324,9 +322,9 @@ class TestMissingRequiredFields:
             assert "description" in errors[0]
 
 
-# ============================================================================
-# Test: Invalid Categories
-# ============================================================================
+# endregion
+
+# region Test: Invalid Categories
 
 
 class TestInvalidCategories:
@@ -399,9 +397,9 @@ class TestInvalidCategories:
         assert errors == []
 
 
-# ============================================================================
-# Test: Missing Dependencies
-# ============================================================================
+# endregion
+
+# region Test: Missing Dependencies
 
 
 class TestMissingDependencies:
@@ -530,9 +528,9 @@ class TestMissingDependencies:
             assert len(agent_errors) == 1
 
 
-# ============================================================================
-# Test: Duplicate Names
-# ============================================================================
+# endregion
+
+# region Test: Duplicate Names
 
 
 class TestDuplicateNames:
@@ -622,9 +620,9 @@ class TestDuplicateNames:
             assert "duplicate-command" in errors[0]
 
 
-# ============================================================================
-# Test: Main Function Exit Codes
-# ============================================================================
+# endregion
+
+# region Test: Main Function Exit Codes
 
 
 class TestMainExitCodes:
@@ -699,9 +697,9 @@ class TestMainExitCodes:
         assert exc_info.value.code == 1
 
 
-# ============================================================================
-# Test: Helper Functions
-# ============================================================================
+# endregion
+
+# region Test: Helper Functions
 
 
 class TestHelperFunctions:
@@ -738,9 +736,9 @@ class TestHelperFunctions:
             assert "description" in errors[0]
 
 
-# ============================================================================
-# Test: Integration - Full Manifest Validation
-# ============================================================================
+# endregion
+
+# region Test: Integration - Full Manifest Validation
 
 
 class TestFullManifestValidation:
@@ -827,3 +825,6 @@ class TestFullManifestValidation:
             assert any("unknown skill" in e for e in errors)
         with check:
             assert any("missing required fields" in e for e in errors)
+
+
+# endregion

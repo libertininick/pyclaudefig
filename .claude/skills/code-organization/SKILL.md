@@ -21,6 +21,7 @@ Apply these organization patterns when writing Python code in this repository.
 | Coupling | Depend on abstractions, not concretions |
 | Dependencies | No circular imports |
 | Responsibility | One purpose per function/class |
+| Section comments | `# region` / `# endregion` (optional) |
 
 ## Module Structure
 
@@ -40,7 +41,7 @@ that is a violation and must be reordered.
 # Imports (organized by section)
 ...
 
-# Public interface (ALL public definitions first)
+# region Public interface (ALL public definitions first)
 class PublicClass:
     """Public API class."""
     ...
@@ -48,11 +49,13 @@ class PublicClass:
 def public_function() -> ReturnType:
     """Public API function."""
     ...
+# endregion
 
-# Private helpers (ALL private definitions after)
+# region Private helpers (ALL private definitions after)
 def _private_helper() -> ReturnType:
     """Internal implementation detail."""
     ...
+# endregion
 ```
 
 ```python
@@ -292,4 +295,43 @@ def validate_amount(amount: Decimal, max_amount: Decimal) -> bool:
 # Now orders and payments both depend on shared module
 ```
 
+## Section Comments
 
+**Pattern**: Use `# region` / `# endregion` to delimit code sections within a file.
+
+Section comments are optional -- not every file needs them. But when you do divide a
+file into sections, use this format exclusively. VSCode recognizes these keywords and
+renders them in the minimap, making them functionally useful, not just decorative.
+
+```python
+# CORRECT - standardized region comments
+# region Public API
+class UserService:
+    """Service for user operations."""
+    ...
+
+def create_user(data: UserCreate) -> User:
+    """Create a new user."""
+    ...
+# endregion
+
+# region Private Helpers
+def _validate_user_data(data: UserCreate) -> None:
+    """Validate user creation data."""
+    ...
+# endregion
+
+
+# INCORRECT - ad-hoc section dividers
+# ----- Classes -----
+# ###### Section Helpers
+# === Public API ===
+# ==================== Utils ====================
+```
+
+| Rule | Detail |
+|------|--------|
+| Format | `# region <Description>` / `# endregion` |
+| Required? | No -- only use when sectioning adds clarity |
+| Nesting | Allowed but discouraged; keep it flat |
+| Banned alternatives | `# -----`, `# ======`, `# ######`, or other decorative dividers |

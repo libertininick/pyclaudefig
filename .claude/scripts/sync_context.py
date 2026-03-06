@@ -28,9 +28,7 @@ from typing import Any
 
 import validate_manifest
 
-# =============================================================================
-# Constants
-# =============================================================================
+# region Constants
 
 
 def _find_claude_dir() -> Path:
@@ -78,10 +76,9 @@ _DEFAULT_MANIFEST = {
     },
 }
 
+# endregion
 
-# =============================================================================
-# Data Classes
-# =============================================================================
+# region Data Classes
 
 
 @dataclass
@@ -131,9 +128,9 @@ class CommandInfo:
     depends_on_skills: list[str] = field(default_factory=list)
 
 
-# =============================================================================
-# Public Interface - Parsing
-# =============================================================================
+# endregion
+
+# region Public Interface - Parsing
 
 
 def parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
@@ -193,9 +190,9 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
     return frontmatter, remaining
 
 
-# =============================================================================
-# Public Interface - Scanning
-# =============================================================================
+# endregion
+
+# region Public Interface - Scanning
 
 
 def scan_skills(*, skills_dir: Path | None = None) -> dict[str, SkillInfo]:
@@ -301,9 +298,9 @@ def scan_commands(*, commands_dir: Path | None = None) -> dict[str, CommandInfo]
     return commands
 
 
-# =============================================================================
-# Public Interface - Manifest Operations
-# =============================================================================
+# endregion
+
+# region Public Interface - Manifest Operations
 
 
 def load_manifest(*, manifest_path: Path | None = None) -> dict[str, Any]:
@@ -358,9 +355,9 @@ def update_manifest(
     return manifest, all_changes
 
 
-# =============================================================================
-# Public Interface - CLAUDE.md Operations
-# =============================================================================
+# endregion
+
+# region Public Interface - CLAUDE.md Operations
 
 
 def generate_claude_md_sections(
@@ -439,9 +436,9 @@ def update_claude_md(
     return changes
 
 
-# =============================================================================
-# Public Interface - Bundle Operations
-# =============================================================================
+# endregion
+
+# region Public Interface - Bundle Operations
 
 
 def regenerate_bundles(
@@ -483,9 +480,9 @@ def regenerate_bundles(
     return ["Regenerated bundles"]
 
 
-# =============================================================================
-# Public Interface - Entry Point
-# =============================================================================
+# endregion
+
+# region Public Interface - Entry Point
 
 
 def main(*, manifest_path: Path | None = None) -> int:
@@ -574,9 +571,9 @@ def main(*, manifest_path: Path | None = None) -> int:
     return 0
 
 
-# =============================================================================
-# Private Helpers - Parsing
-# =============================================================================
+# endregion
+
+# region Private Helpers - Parsing
 
 
 def _parse_value(value: str) -> str | bool | list[str]:
@@ -598,9 +595,9 @@ def _parse_value(value: str) -> str | bool | list[str]:
     return value
 
 
-# =============================================================================
-# Private Helpers - Manifest Sync
-# =============================================================================
+# endregion
+
+# region Private Helpers - Manifest Sync
 
 
 def _sync_skills(
@@ -716,9 +713,9 @@ def _sync_commands(
     return new_commands, changes
 
 
-# =============================================================================
-# Private Helpers - Section Generation
-# =============================================================================
+# endregion
+
+# region Private Helpers - Section Generation
 
 
 def _generate_commands_section(
@@ -847,6 +844,9 @@ def _generate_skills_section(
         ]
     )
     return "\n".join(lines)
+
+
+# endregion
 
 
 if __name__ == "__main__":

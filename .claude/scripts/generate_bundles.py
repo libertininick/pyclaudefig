@@ -41,6 +41,9 @@ QUICK_REFERENCE_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 
 
+# region Public interface
+
+
 @dataclass
 class SkillContent:
     """Container for skill content with optional layers.
@@ -76,6 +79,173 @@ def load_manifest(*, manifest_path: Path | None = None) -> dict[str, Any]:
         manifest_path = MANIFEST_PATH
     with manifest_path.open() as f:
         return json.load(f)
+
+
+def load_skill_content(
+    skill_name: str, *, skills_dir: Path | None = None
+) -> SkillContent | None:
+    """Load the content of a skill including any layers.
+
+    Args:
+        skill_name (str): Name of the skill directory.
+        skills_dir (Path | None): Path to the skills directory.
+
+    Returns:
+        SkillContent | None: The skill content with layers, or None if not found.
+    """
+    if skills_dir is None:
+        skills_dir = SKILLS_DIR
+    skill_dir = skills_dir / skill_name
+    skill_path = skill_dir / "SKILL.md"
+    if not skill_path.exists():
+        print(f"  Warning: Skill not found: {skill_name}")
+        return None
+
+    content = skill_path.read_text()
+    frontmatter = _parse_frontmatter(content)
+    main_content = _remove_frontmatter(content).strip()
+
+    layers_config = frontmatter.get("layers", {})
+    layers = _load_layer_files(skill_dir, layers_config) if layers_config else {}
+
+    return SkillContent(main_content=main_content, layers=layers)
+
+
+def extract_quick_reference(content: str) -> str | None:
+    """Extract just the Quick Reference section from skill content.
+
+    Args:
+        content (str): Full skill content.
+
+    Returns:
+        str | None: Quick Reference section if found, None otherwise.
+    """
+    if match := QUICK_REFERENCE_PATTERN.search(content):
+        return match.group(1).strip()
+    return None
+
+
+def generate_bundle(
+    agent_name: str,
+    agent_config: Mapping[str, Any],
+    skills_lookup: Mapping[str, Mapping[str, Any]],
+    *,
+    compact: bool = False,
+    skills_dir: Path | None = None,
+) -> str:
+    """Generate a context bundle for an agent.
+
+    Args:
+        agent_name (str): Name of the agent.
+        agent_config (Mapping[str, Any]): Agent configuration from manifest.
+        skills_lookup (Mapping[str, Mapping[str, Any]]): Skill name to config mapping.
+        compact (bool): If True, only include Quick Reference sections.
+        skills_dir (Path | None): Path to the skills directory.
+
+    Returns:
+        str: The generated bundle content.
+    """
+    if skills_dir is None:
+        skills_dir = SKILLS_DIR
+    dependencies: list[str] = agent_config.get("depends_on_skills", [])
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Load skills first to filter missing ones from both TOC and content
+    loaded_skills: dict[str, SkillContent] = {}
+    for skill_name in dependencies:
+        skill = load_skill_content(skill_name, skills_dir=skills_dir)
+        if skill is not None:
+            loaded_skills[skill_name] = skill
+
+    lines: list[str] = [
+        *_build_bundle_header(agent_name, timestamp),
+        *_build_table_of_contents(list(loaded_skills.keys()), skills_lookup),
+    ]
+
+    for skill_name, skill in loaded_skills.items():
+        lines.extend(_format_skill_section(skill_name, skill, compact=compact))
+
+    return "\n".join(lines)
+
+
+def generate_all_bundles(
+    *,
+    dry_run: bool = False,
+    agent_filter: str | None = None,
+    manifest_path: Path | None = None,
+    skills_dir: Path | None = None,
+    bundles_dir: Path | None = None,
+    claude_dir: Path | None = None,
+) -> None:
+    """Generate bundles for all agents in the manifest.
+
+    Args:
+        dry_run (bool): If True, print what would be generated without writing.
+        agent_filter (str | None): If provided, only generate bundle for this agent.
+        manifest_path (Path | None): Path to the manifest.json file.
+        skills_dir (Path | None): Path to the skills directory.
+        bundles_dir (Path | None): Path to the bundles directory.
+        claude_dir (Path | None): Path to the .claude directory.
+    """
+    if manifest_path is None:
+        manifest_path = MANIFEST_PATH
+    if skills_dir is None:
+        skills_dir = SKILLS_DIR
+    if bundles_dir is None:
+        bundles_dir = BUNDLES_DIR
+    if claude_dir is None:
+        claude_dir = CLAUDE_DIR
+    manifest = load_manifest(manifest_path=manifest_path)
+    skills_lookup = _build_skills_lookup(manifest)
+
+    if not dry_run:
+        bundles_dir.mkdir(exist_ok=True)
+
+    for agent_config in manifest.get("agents", []):
+        agent_name = agent_config["name"]
+        if agent_filter and agent_name != agent_filter:
+            continue
+        _process_agent(
+            agent_config,
+            skills_lookup,
+            dry_run=dry_run,
+            skills_dir=skills_dir,
+            bundles_dir=bundles_dir,
+            claude_dir=claude_dir,
+        )
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    manifest_path: Path | None = None,
+    skills_dir: Path | None = None,
+    bundles_dir: Path | None = None,
+    claude_dir: Path | None = None,
+) -> None:
+    """Entry point for the bundle generator script.
+
+    Args:
+        argv (list[str] | None): Command-line arguments to parse. If None, uses sys.argv.
+        manifest_path (Path | None): Path to the manifest.json file.
+        skills_dir (Path | None): Path to the skills directory.
+        bundles_dir (Path | None): Path to the bundles directory.
+        claude_dir (Path | None): Path to the .claude directory.
+    """
+    args = _parse_args(argv)
+    generate_all_bundles(
+        dry_run=args.dry_run,
+        agent_filter=args.agent,
+        manifest_path=manifest_path,
+        skills_dir=skills_dir,
+        bundles_dir=bundles_dir,
+        claude_dir=claude_dir,
+    )
+
+
+# endregion
+
+# region Private helpers
 
 
 def _parse_frontmatter(content: str) -> dict[str, Any]:
@@ -126,50 +296,6 @@ def _load_layer_files(skill_dir: Path, layers_config: dict[str, str]) -> dict[st
         else:
             print(f"  Warning: Layer file not found: {layer_path}")
     return layers
-
-
-def load_skill_content(
-    skill_name: str, *, skills_dir: Path | None = None
-) -> SkillContent | None:
-    """Load the content of a skill including any layers.
-
-    Args:
-        skill_name (str): Name of the skill directory.
-        skills_dir (Path | None): Path to the skills directory.
-
-    Returns:
-        SkillContent | None: The skill content with layers, or None if not found.
-    """
-    if skills_dir is None:
-        skills_dir = SKILLS_DIR
-    skill_dir = skills_dir / skill_name
-    skill_path = skill_dir / "SKILL.md"
-    if not skill_path.exists():
-        print(f"  Warning: Skill not found: {skill_name}")
-        return None
-
-    content = skill_path.read_text()
-    frontmatter = _parse_frontmatter(content)
-    main_content = _remove_frontmatter(content).strip()
-
-    layers_config = frontmatter.get("layers", {})
-    layers = _load_layer_files(skill_dir, layers_config) if layers_config else {}
-
-    return SkillContent(main_content=main_content, layers=layers)
-
-
-def extract_quick_reference(content: str) -> str | None:
-    """Extract just the Quick Reference section from skill content.
-
-    Args:
-        content (str): Full skill content.
-
-    Returns:
-        str | None: Quick Reference section if found, None otherwise.
-    """
-    if match := QUICK_REFERENCE_PATTERN.search(content):
-        return match.group(1).strip()
-    return None
 
 
 def _order_layers(layers: dict[str, str]) -> list[tuple[str, str]]:
@@ -301,49 +427,6 @@ def _format_skill_section(
     return lines
 
 
-def generate_bundle(
-    agent_name: str,
-    agent_config: Mapping[str, Any],
-    skills_lookup: Mapping[str, Mapping[str, Any]],
-    *,
-    compact: bool = False,
-    skills_dir: Path | None = None,
-) -> str:
-    """Generate a context bundle for an agent.
-
-    Args:
-        agent_name (str): Name of the agent.
-        agent_config (Mapping[str, Any]): Agent configuration from manifest.
-        skills_lookup (Mapping[str, Mapping[str, Any]]): Skill name to config mapping.
-        compact (bool): If True, only include Quick Reference sections.
-        skills_dir (Path | None): Path to the skills directory.
-
-    Returns:
-        str: The generated bundle content.
-    """
-    if skills_dir is None:
-        skills_dir = SKILLS_DIR
-    dependencies: list[str] = agent_config.get("depends_on_skills", [])
-    timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    # Load skills first to filter missing ones from both TOC and content
-    loaded_skills: dict[str, SkillContent] = {}
-    for skill_name in dependencies:
-        skill = load_skill_content(skill_name, skills_dir=skills_dir)
-        if skill is not None:
-            loaded_skills[skill_name] = skill
-
-    lines: list[str] = [
-        *_build_bundle_header(agent_name, timestamp),
-        *_build_table_of_contents(list(loaded_skills.keys()), skills_lookup),
-    ]
-
-    for skill_name, skill in loaded_skills.items():
-        lines.extend(_format_skill_section(skill_name, skill, compact=compact))
-
-    return "\n".join(lines)
-
-
 def _build_skills_lookup(manifest: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     """Build a lookup dict mapping skill names to their configurations.
 
@@ -421,53 +504,6 @@ def _process_agent(
     )
 
 
-def generate_all_bundles(
-    *,
-    dry_run: bool = False,
-    agent_filter: str | None = None,
-    manifest_path: Path | None = None,
-    skills_dir: Path | None = None,
-    bundles_dir: Path | None = None,
-    claude_dir: Path | None = None,
-) -> None:
-    """Generate bundles for all agents in the manifest.
-
-    Args:
-        dry_run (bool): If True, print what would be generated without writing.
-        agent_filter (str | None): If provided, only generate bundle for this agent.
-        manifest_path (Path | None): Path to the manifest.json file.
-        skills_dir (Path | None): Path to the skills directory.
-        bundles_dir (Path | None): Path to the bundles directory.
-        claude_dir (Path | None): Path to the .claude directory.
-    """
-    if manifest_path is None:
-        manifest_path = MANIFEST_PATH
-    if skills_dir is None:
-        skills_dir = SKILLS_DIR
-    if bundles_dir is None:
-        bundles_dir = BUNDLES_DIR
-    if claude_dir is None:
-        claude_dir = CLAUDE_DIR
-    manifest = load_manifest(manifest_path=manifest_path)
-    skills_lookup = _build_skills_lookup(manifest)
-
-    if not dry_run:
-        bundles_dir.mkdir(exist_ok=True)
-
-    for agent_config in manifest.get("agents", []):
-        agent_name = agent_config["name"]
-        if agent_filter and agent_name != agent_filter:
-            continue
-        _process_agent(
-            agent_config,
-            skills_lookup,
-            dry_run=dry_run,
-            skills_dir=skills_dir,
-            bundles_dir=bundles_dir,
-            claude_dir=claude_dir,
-        )
-
-
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments.
 
@@ -493,32 +529,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(
-    argv: list[str] | None = None,
-    *,
-    manifest_path: Path | None = None,
-    skills_dir: Path | None = None,
-    bundles_dir: Path | None = None,
-    claude_dir: Path | None = None,
-) -> None:
-    """Entry point for the bundle generator script.
-
-    Args:
-        argv (list[str] | None): Command-line arguments to parse. If None, uses sys.argv.
-        manifest_path (Path | None): Path to the manifest.json file.
-        skills_dir (Path | None): Path to the skills directory.
-        bundles_dir (Path | None): Path to the bundles directory.
-        claude_dir (Path | None): Path to the .claude directory.
-    """
-    args = _parse_args(argv)
-    generate_all_bundles(
-        dry_run=args.dry_run,
-        agent_filter=args.agent,
-        manifest_path=manifest_path,
-        skills_dir=skills_dir,
-        bundles_dir=bundles_dir,
-        claude_dir=claude_dir,
-    )
+# endregion
 
 
 if __name__ == "__main__":

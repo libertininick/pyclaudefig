@@ -72,9 +72,7 @@ from typing import TYPE_CHECKING, Final
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-# =============================================================================
-# Exit Codes
-# =============================================================================
+# region Exit Codes
 
 EXIT_SUCCESS: Final[int] = 0
 EXIT_BLOCKED: Final[int] = 1
@@ -83,18 +81,18 @@ EXIT_TIMEOUT: Final[int] = 3
 
 EXECUTION_TIMEOUT_SECONDS: Final[int] = 300
 
-# =============================================================================
-# Exceptions
-# =============================================================================
+# endregion
+
+# region Exceptions
 
 
 class FileReadError(Exception):
     """Raised when a source file cannot be read."""
 
 
-# =============================================================================
-# Types
-# =============================================================================
+# endregion
+
+# region Types
 
 
 class IssueCategory(Enum):
@@ -129,9 +127,9 @@ class CodeSource:
     exec_args: list[str]
 
 
-# =============================================================================
-# Constants: Blocked Imports
-# =============================================================================
+# endregion
+
+# region Constants: Blocked Imports
 # Modules that provide access to destructive capabilities, organized by threat:
 #
 # File/Process Operations: os, sys, subprocess, shutil
@@ -194,9 +192,9 @@ _IMPORT_DETAILS: Final[dict[str, str]] = {
     "builtins": "access to built-in functions",
 }
 
-# =============================================================================
-# Constants: Blocked Builtins
-# =============================================================================
+# endregion
+
+# region Constants: Blocked Builtins
 # Built-in functions that enable dangerous operations:
 #
 # Code Execution: eval, exec, compile
@@ -250,9 +248,9 @@ _BUILTIN_DETAILS: Final[dict[str, str]] = {
     "input": "user input during execution",
 }
 
-# =============================================================================
-# Constants: Blocked Methods
-# =============================================================================
+# endregion
+
+# region Constants: Blocked Methods
 # Method names that modify the filesystem. These are blocked on ANY object,
 # not just pathlib.Path. This means `my_custom_object.unlink()` will be blocked
 # even if unrelated to files. This is intentional—false positives are acceptable.
@@ -303,10 +301,9 @@ _METHOD_DETAILS: Final[dict[str, str]] = {
     "rmtree": "recursive directory deletion",
 }
 
+# endregion
 
-# =============================================================================
-# Public API
-# =============================================================================
+# region Public API
 
 
 def check_code(code: str) -> list[SafetyIssue]:
@@ -426,9 +423,9 @@ def format_issues(issues: list[SafetyIssue]) -> str:
     )
 
 
-# =============================================================================
-# Private Helpers: Import Checking
-# =============================================================================
+# endregion
+
+# region Private Helpers: Import Checking
 
 
 def _collect_import_issues(tree: ast.AST) -> Iterator[SafetyIssue]:
@@ -484,9 +481,9 @@ def _create_import_issue(module: str) -> SafetyIssue | None:
     )
 
 
-# =============================================================================
-# Private Helpers: Builtin Checking
-# =============================================================================
+# endregion
+
+# region Private Helpers: Builtin Checking
 
 
 def _collect_builtin_issues(tree: ast.AST) -> Iterator[SafetyIssue]:
@@ -566,9 +563,9 @@ def _create_builtin_alias_issue(name: str) -> SafetyIssue | None:
     )
 
 
-# =============================================================================
-# Private Helpers: Method Checking
-# =============================================================================
+# endregion
+
+# region Private Helpers: Method Checking
 
 
 def _collect_method_issues(tree: ast.AST) -> Iterator[SafetyIssue]:
@@ -612,9 +609,9 @@ def _create_method_issue(
     return SafetyIssue(category=IssueCategory.METHOD, name=method, detail=detail)
 
 
-# =============================================================================
-# CLI
-# =============================================================================
+# endregion
+
+# region CLI
 
 
 def main() -> int:
@@ -642,9 +639,9 @@ def main() -> int:
     return _execute_code(source.exec_args, timeout=args.timeout)
 
 
-# =============================================================================
-# CLI: Private Helpers
-# =============================================================================
+# endregion
+
+# region CLI: Private Helpers
 
 
 def _build_argument_parser() -> argparse.ArgumentParser:  # pragma: no cover
@@ -747,6 +744,9 @@ def _execute_code(
             file=sys.stderr,
         )
         return EXIT_TIMEOUT
+
+
+# endregion
 
 
 if __name__ == "__main__":  # pragma: no cover

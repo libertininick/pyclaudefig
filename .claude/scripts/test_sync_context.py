@@ -37,9 +37,7 @@ from sync_context import (
     update_manifest,
 )
 
-# ============================================================================
-# Helpers
-# ============================================================================
+# region Helpers
 
 
 def _write_skill(skill_dir: Path, frontmatter: str, body: str = "") -> None:
@@ -71,9 +69,9 @@ def _write_md_file(
     (directory / filename).write_text(content)
 
 
-# ============================================================================
-# Test: parse_frontmatter
-# ============================================================================
+# endregion
+
+# region Test: parse_frontmatter
 
 
 class TestParseFrontmatter:
@@ -275,9 +273,9 @@ class TestParseFrontmatter:
         assert frontmatter["items"] == []
 
 
-# ============================================================================
-# Test: scan_skills
-# ============================================================================
+# endregion
+
+# region Test: scan_skills
 
 
 class TestScanSkills:
@@ -486,9 +484,9 @@ class TestScanSkills:
         assert skills == {}
 
 
-# ============================================================================
-# Test: scan_agents
-# ============================================================================
+# endregion
+
+# region Test: scan_agents
 
 
 class TestScanAgents:
@@ -608,9 +606,9 @@ class TestScanAgents:
         assert agents["my-agent"].depends_on_skills == ["skill-a", "skill-b"]
 
 
-# ============================================================================
-# Test: scan_commands
-# ============================================================================
+# endregion
+
+# region Test: scan_commands
 
 
 class TestScanCommands:
@@ -731,9 +729,9 @@ class TestScanCommands:
             assert commands["deploy"].depends_on_skills == ["skill-x", "skill-y"]
 
 
-# ============================================================================
-# Test: load_manifest
-# ============================================================================
+# endregion
+
+# region Test: load_manifest
 
 
 class TestLoadManifest:
@@ -812,9 +810,9 @@ class TestLoadManifest:
             assert second["commands"] == []
 
 
-# ============================================================================
-# Test: update_manifest
-# ============================================================================
+# endregion
+
+# region Test: update_manifest
 
 
 class TestUpdateManifest:
@@ -1061,9 +1059,9 @@ class TestUpdateManifest:
             assert "depends_on_skills" not in entry
 
 
-# ============================================================================
-# Test: generate_claude_md_sections
-# ============================================================================
+# endregion
+
+# region Test: generate_claude_md_sections
 
 
 class TestGenerateClaudeMdSections:
@@ -1105,9 +1103,9 @@ class TestGenerateClaudeMdSections:
             assert "`/test-cmd`" in sections["Commands"]
 
 
-# ============================================================================
-# Test: _generate_commands_section
-# ============================================================================
+# endregion
+
+# region Test: _generate_commands_section
 
 
 class TestGenerateCommandsSection:
@@ -1159,9 +1157,9 @@ class TestGenerateCommandsSection:
             assert section.count("| `/") == 0
 
 
-# ============================================================================
-# Test: _generate_agents_section
-# ============================================================================
+# endregion
+
+# region Test: _generate_agents_section
 
 
 class TestGenerateAgentsSection:
@@ -1202,9 +1200,9 @@ class TestGenerateAgentsSection:
         assert "Manifest agent desc" in section
 
 
-# ============================================================================
-# Test: _generate_bundles_section
-# ============================================================================
+# endregion
+
+# region Test: _generate_bundles_section
 
 
 class TestGenerateBundlesSection:
@@ -1240,9 +1238,9 @@ class TestGenerateBundlesSection:
             assert "generate_bundles.py" in section
 
 
-# ============================================================================
-# Test: _generate_skills_section
-# ============================================================================
+# endregion
+
+# region Test: _generate_skills_section
 
 
 class TestGenerateSkillsSection:
@@ -1305,9 +1303,9 @@ class TestGenerateSkillsSection:
             assert "**Utilities**:" not in section
 
 
-# ============================================================================
-# Test: update_claude_md
-# ============================================================================
+# endregion
+
+# region Test: update_claude_md
 
 
 class TestUpdateClaudeMd:
@@ -1466,9 +1464,9 @@ class TestUpdateClaudeMd:
         assert changes == []
 
 
-# ============================================================================
-# Test: regenerate_bundles
-# ============================================================================
+# endregion
+
+# region Test: regenerate_bundles
 
 
 class TestRegenerateBundles:
@@ -1556,9 +1554,9 @@ class TestRegenerateBundles:
             assert "ImportError" in changes[0]
 
 
-# ============================================================================
-# Test: main
-# ============================================================================
+# endregion
+
+# region Test: main
 
 
 class TestMain:
@@ -1729,3 +1727,6 @@ class TestMain:
 
         # Assert
         assert manifest_path.exists()
+
+
+# endregion
