@@ -18,6 +18,7 @@ user-invocable: false
 | Generic containers | Lowercase builtins | `list[str]`, `dict[str, int]` |
 | Type variables | Inline `[T]` syntax (PEP 695) | `def first[T](...)` |
 | Type aliases | `type` statement (PEP 695) | `type UserId = int` |
+| Constants | `Final[type]` | `MAX_RETRIES: Final[int] = 3` |
 | Constrained strings | `Literal` | `Status = Literal["active", "pending"]` |
 | Dict structures | `TypedDict` | For API responses and configs |
 | Fluent methods | `Self` | For builder patterns |
@@ -214,6 +215,28 @@ LogLevel = Literal["debug", "info", "warning", "error"]
 
 def update_status(task_id: int, status: Status) -> None:
     ...
+```
+
+## Constants with Final
+
+Always annotate module-level constants with `Final[type]`, including the explicit type parameter:
+
+```python
+from typing import Final
+
+# CORRECT - Final[type] with explicit type parameter
+MAX_RETRIES: Final[int] = 3
+API_BASE_URL: Final[str] = "https://api.example.com"
+DEFAULT_TIMEOUT: Final[float] = 30.0
+SUPPORTED_FORMATS: Final[frozenset[str]] = frozenset({"json", "csv", "parquet"})
+ENABLE_DEBUG: Final[bool] = False
+
+# INCORRECT - bare Final without type parameter
+MAX_RETRIES: Final = 3  # Missing type parameter
+
+# INCORRECT - no Final annotation at all
+MAX_RETRIES: int = 3     # Mutable, not marked as constant
+MAX_RETRIES = 3           # No type info, not marked as constant
 ```
 
 ## Validation

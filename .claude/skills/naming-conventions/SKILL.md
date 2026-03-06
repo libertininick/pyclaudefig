@@ -16,7 +16,7 @@ Apply these naming patterns when writing Python code in this repository.
 | Async function | `snake_case` | `async_<verb>_<noun>` | `async_fetch_user` |
 | Variable | `snake_case` | descriptive | `user_count`, `is_valid` |
 | Class | `PascalCase` | noun | `SearchIndex`, `UserSession` |
-| Constant | `SCREAMING_SNAKE_CASE` | + `Final` | `MAX_RETRIES: Final = 3` |
+| Constant | `SCREAMING_SNAKE_CASE` | + `Final[type]` | `MAX_RETRIES: Final[int] = 3` |
 | Private | `_snake_case` | `_` prefix | `_cache`, `_validate` |
 | Type alias | `PascalCase` | noun | `JsonValue`, `Embedding` |
 
@@ -111,13 +111,13 @@ class DoValidation: ...    # Verb phrase
 
 ## Constants
 
-**Pattern**: `SCREAMING_SNAKE_CASE` with `Final` type annotation
+**Pattern**: `SCREAMING_SNAKE_CASE` with `Final[type]` annotation (always include the type parameter)
 
 ```python
 from typing import Final
 
-# CORRECT
-MAX_RETRY_ATTEMPTS: Final = 3
+# CORRECT - always use Final[type] with explicit type parameter
+MAX_RETRY_ATTEMPTS: Final[int] = 3
 DEFAULT_TIMEOUT_SECONDS: Final[float] = 30.0
 SUPPORTED_FILE_FORMATS: Final[frozenset[str]] = frozenset({"json", "csv", "parquet"})
 
@@ -125,6 +125,7 @@ SUPPORTED_FILE_FORMATS: Final[frozenset[str]] = frozenset({"json", "csv", "parqu
 MaxRetries = 3              # Wrong case, missing Final
 max_retry_attempts = 3      # Wrong case for constant
 MAX_RETRY_ATTEMPTS = 3      # Missing Final annotation
+MAX_RETRY_ATTEMPTS: Final = 3  # Missing type parameter in Final
 ```
 
 ## Private Members
