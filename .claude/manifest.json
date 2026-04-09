@@ -137,7 +137,8 @@
         "type-hints",
         "maintainability",
         "testability",
-        "validate-code"
+        "validate-code",
+        "run-python-safely"
       ]
     },
     {

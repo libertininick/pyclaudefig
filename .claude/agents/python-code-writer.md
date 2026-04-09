@@ -34,7 +34,7 @@ The bundle contains: frameworks, code-organization, naming-conventions, function
 1. **Read first**: Always read existing code before writing
 2. **Load bundle**: Read your context bundle before writing code
 3. **Approved frameworks only**: Check bundle's `frameworks` section; use `fetch-docs` skill for docs
-4. **Safe Python execution**: Use `run-python-safely` skill for any generated Python
+4. **Safe Python execution (MANDATORY)**: ALWAYS use `run-python-safely` skill as the FIRST attempt when running any generated Python. Do NOT ask the user -- run it automatically. Only if it blocks or fails, ask the user to run manually. NO EXCEPTIONS.
 5. **No tests**: Focus on writing testable code; use `python-test-writer` for tests
 6. **No over-engineering**: Write the simplest solution that works
 7. **MANDATORY VALIDATION**: You MUST NOT report task completion until `uv run .claude/scripts/validate_code.py` passes with exit code 0 on all files you touched. If it fails, fix the issues and re-run. Repeat until clean.
