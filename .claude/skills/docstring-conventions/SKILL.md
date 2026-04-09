@@ -8,6 +8,51 @@ user-invocable: false
 
 Apply Google-style docstrings when writing Python code in this repository.
 
+## RST/Sphinx Prohibition
+
+**NEVER use RST or Sphinx-style docstrings. This is a hard rule with zero exceptions.**
+
+Always use Google-style docstrings as defined in this skill. The following RST/Sphinx patterns are **absolutely forbidden**:
+
+| Forbidden Pattern | Use Instead |
+|-------------------|-------------|
+| `:param name:` | `Args:` section with `name (Type): description` |
+| `:type name:` | Type annotation in signature + `Args:` section |
+| `:returns:` / `:return:` | `Returns:` section |
+| `:rtype:` | Return type annotation in signature + `Returns:` section |
+| `:raises ExcType:` | `Raises:` section with `ExcType: description` |
+| `:var:` / `:ivar:` / `:cvar:` | `Attributes:` section |
+
+```python
+# CORRECT - Google-style (ALWAYS use this)
+def fetch_user(user_id: int, include_inactive: bool = False) -> User:
+    """Fetch a user from the database by their unique identifier.
+
+    Args:
+        user_id (int): The unique identifier for the user.
+        include_inactive (bool): Whether to include deactivated users.
+
+    Returns:
+        User: The matching user record.
+
+    Raises:
+        UserNotFoundError: If no user matches the given ID.
+    """
+
+# INCORRECT - Sphinx/RST-style (NEVER use this)
+def fetch_user(user_id: int, include_inactive: bool = False) -> User:
+    """Fetch a user from the database by their unique identifier.
+
+    :param user_id: The unique identifier for the user.
+    :type user_id: int
+    :param include_inactive: Whether to include deactivated users.
+    :type include_inactive: bool
+    :returns: The matching user record.
+    :rtype: User
+    :raises UserNotFoundError: If no user matches the given ID.
+    """
+```
+
 ## Required Docstrings
 
 | Element | Format |
