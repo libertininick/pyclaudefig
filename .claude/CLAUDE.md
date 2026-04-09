@@ -33,6 +33,7 @@ Guidance for Claude Code when working in this repository.
 5. **Never hallucinate** - Ask if uncertain about paths, modules, or APIs
 6. **Never delete code** unless explicitly instructed
 7. **Never commit** unless explicitly instructed
+8. **Google-style docstrings only** - NEVER use RST or Sphinx-style docstrings (`:param:`, `:returns:`, `:rtype:`, etc.). Always follow `docstring-conventions` skill. Zero exceptions.
 
 ---
 
