@@ -50,6 +50,7 @@ The most powerful tool for context management in this configuration is **agent d
 
 | Agent | What It Handles | Context Benefit |
 |-------|-----------------|-----------------|
+| `brainstormer` | Multi-turn interviews, scope discovery, idea generation | Keeps exploratory conversation out of your main session |
 | `planner` | Deep codebase exploration, multi-file analysis | Keeps exploration out of your main session |
 | `python-code-writer` | Implementation with full convention loading | Loads bundles in its own context |
 | `python-test-writer` | Test creation with testing conventions | Isolates test-specific context |
@@ -67,6 +68,7 @@ The most powerful tool for context management in this configuration is **agent d
 ### When to Delegate to Agents
 
 **Use agents for:**
+- Brainstorming and scope discovery (`brainstormer`)
 - Research and exploration (`planner`)
 - Implementation work (`python-code-writer`)
 - Test writing (`python-test-writer`)
@@ -84,6 +86,14 @@ The most powerful tool for context management in this configuration is **agent d
 ## Commands: Orchestrated Context Efficiency
 
 Commands in this configuration orchestrate agents and workflows, letting you express intent while the system manages context distribution.
+
+### `/brainstorm <topic>`
+
+Runs a multi-turn interview to discover scope and generate ideas before planning.
+
+**Context benefit:** The `brainstormer` agent conducts an extended conversation with probing questions, codebase exploration, and idea generation—all in its own isolated context. Your main session receives only the synthesized brainstorm document with a ready-to-use plan prompt.
+
+**When to use:** Vague requirements, complex problem spaces, exploring alternatives before committing to an approach.
 
 ### `/plan <feature-description>`
 
@@ -149,6 +159,7 @@ With bundles, an agent:
 | Agent | Bundle | Contents |
 |-------|--------|----------|
 | `code-cleaner` | `bundles/code-cleaner.md` | Cleans Python code |
+| `brainstormer` | *(no bundle — uses codebase exploration and interview)* | Scope discovery, idea generation |
 | `code-style-reviewer` | `bundles/code-style-reviewer.md` | All style-focused conventions |
 | `code-substance-reviewer` | `bundles/code-substance-reviewer.md` | Design, maintainability, testability conventions |
 | `planner` | `bundles/planner.md` | plan-template, write-markdown-output, frameworks, code-organization, data-structures, function-design, class-design, testability, maintainability, naming-conventions, testing |
@@ -320,6 +331,9 @@ Continuing implementation discussions long after the plan is obsolete:
 ### Context-Efficient Workflow
 
 ```
+# 0. Brainstorm if scope is unclear (isolated context)
+/brainstorm I want to add a new feature but I'm not sure about the approach
+
 # 1. Plan in isolated context
 /plan add new feature
 

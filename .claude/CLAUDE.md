@@ -52,6 +52,7 @@ Evaluate every user request against this table. Use the **first matching row**.
 | Review code (general) | `code-style-reviewer` + `code-substance-reviewer` | Launch both in parallel; use `/review` command when available |
 | Review tests | `test-reviewer` | May combine with code reviewers if reviewing both source and tests |
 | Clean, refactor, or organize code | `code-cleaner` | Includes import cleanup, complexity reduction, docstring fixes |
+| Brainstorm or explore ideas before planning | `brainstormer` | Use as precursor to `/plan`; interviews user to discover true scope |
 | Create an implementation plan | `planner` | For new features, refactors, or architectural changes |
 | Improve Claude Code configuration | `config-learner` | For feedback, skill updates, CLAUDE.md changes |
 
@@ -98,6 +99,7 @@ Reusable workflows in `.claude/commands/`. See each file for details.
 | Command | Purpose |
 |---------|---------|
 | `/add-framework` | Add a new approved framework |
+| `/brainstorm` | Multi-turn brainstorming session before planning |
 | `/clean` | Clean Python code files |
 | `/create-skill` | Create a new Claude Code skill |
 | `/implement` | Execute plan phases |
@@ -117,6 +119,7 @@ Specialized sub-agents in `.claude/agents/`. See each file for details.
 
 | Agent | Scope |
 |-------|-------|
+| `brainstormer` | Interviews user to discover scope and generate ideas before planning |
 | `code-cleaner` | Cleans and organizes Python code |
 | `code-style-reviewer` | Reviews style and conventions |
 | `code-substance-reviewer` | Reviews design and correctness |
@@ -173,6 +176,7 @@ Agents write outputs to `.claude/agent-outputs/` using `write-markdown-output` s
 
 ```
 .claude/agent-outputs/
+├── brainstorms/     # Brainstorming session takeaways
 ├── plans/           # Implementation plans
 ├── reviews/         # Code reviews
 └── pr-descriptions/ # PR descriptions

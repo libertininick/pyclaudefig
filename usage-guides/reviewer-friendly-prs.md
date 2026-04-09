@@ -21,8 +21,26 @@ A coding agent can produce in minutes what takes a human reviewer hours to prope
 This configuration provides a structured workflow that produces reviewer-friendly PRs by design:
 
 ```
-/plan → /implement → /review → /pr-description → Human Review
+(/brainstorm →) /plan → /implement → /review → /pr-description → Human Review
 ```
+
+### 0. Brainstorm First If Needed (`/brainstorm`)
+
+When scope is unclear or you want to explore alternatives before committing:
+
+```
+/brainstorm What's the best approach for batch processing in the data pipeline?
+```
+
+The `brainstormer` agent will:
+- Explore the codebase for relevant patterns
+- Interview you with probing questions to uncover the real problem
+- Challenge assumptions and surface alternatives
+- Produce a brainstorm document with a ready-to-use plan prompt
+
+**Why this helps reviewers:** Brainstorming surfaces the *right* approach before code is written. Reviewers see well-reasoned design decisions rather than first-attempt guesses.
+
+**Skip brainstorming** for well-defined tasks with clear requirements — go straight to `/plan`.
 
 ### 1. Plan First (`/plan`)
 
@@ -31,6 +49,8 @@ Start every non-trivial change with a plan:
 ```
 /plan Add batch processing for the data pipeline
 ```
+
+If you ran `/brainstorm`, copy the **Plan Prompt** from the brainstorm output and pass it to `/plan`.
 
 The `planner` agent will:
 - Clarify requirements and ask questions
@@ -207,6 +227,7 @@ The `pr-description-template` structures this for you, but ensure you're specifi
 
 | Command | Purpose |
 |---------|---------|
+| `/brainstorm <topic>` | Discover scope before planning |
 | `/plan <description>` | Create implementation plan |
 | `/implement Phase N from <plan>` | Implement specific phase |
 | `/review --staged` | Review staged changes before commit |

@@ -8,6 +8,7 @@ A structured approach for working with Claude Code in this repository using spec
 ## Table of Contents
 
 - [Overview: The Workflow](#overview-the-workflow)
+- [Phase 0: Brainstorming (Optional)](#phase-0-brainstorming-optional)
 - [Phase 1: Iterative Planning](#phase-1-iterative-planning)
 - [Phase 2: Implement and Review (Per Phase)](#phase-2-implement-and-review-per-phase)
 - [Phase 3: Commit Changes (Manual)](#phase-3-commit-changes-manual)
@@ -25,9 +26,19 @@ A structured approach for working with Claude Code in this repository using spec
 
 ## Overview: The Workflow
 
-This repository is configured with specialized agents and commands that automate the agentic coding workflow. The workflow has two main iterative loops:
+This repository is configured with specialized agents and commands that automate the agentic coding workflow. The workflow has two main iterative loops, with an optional brainstorming phase for complex or ambiguous work:
 
 ```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 0: BRAINSTORMING (optional)                                          │
+│                                                                             │
+│    /brainstorm ──▶ interview ──▶ synthesize ──▶ plan prompt                 │
+│                                                                             │
+│    Use when scope is unclear, problem is complex, or you want to explore    │
+│    alternatives before committing to an approach.                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  PHASE 1: ITERATIVE PLANNING                                                │
 │                                                                             │
@@ -111,10 +122,75 @@ This repository is configured with specialized agents and commands that automate
 ```
 
 **Key components:**
-- **8 specialized agents** with appropriate models and context bundles
-- **10 commands** that orchestrate agent workflows
+- **9 specialized agents** with appropriate models and context bundles
+- **11 commands** that orchestrate agent workflows
 - **22 skills** that define coding conventions and standards
 - **Automatic outputs** saved to `.claude/agent-outputs/`
+
+[Back to top](#top)
+
+---
+
+## Phase 0: Brainstorming (Optional)
+
+Use `/brainstorm` when you have a rough idea but haven't nailed down the scope, want to explore alternatives, or need help thinking through a complex problem space.
+
+### When to Brainstorm
+
+**Use `/brainstorm` before `/plan` when:**
+- You have a vague idea but haven't defined the scope
+- The problem space is complex and you want to think it through
+- You want to explore alternatives before committing to an approach
+- You want the AI to interview you rather than you driving the conversation
+
+**Skip brainstorming for:**
+- Well-defined tasks with clear requirements (go straight to `/plan`)
+- Simple one-line fixes
+- Tasks where scope is already locked in
+
+### Running a Brainstorm
+
+**Command syntax:**
+```
+/brainstorm <topic or rough idea>
+```
+
+**Examples:**
+```
+/brainstorm How should we handle authentication in this project?
+/brainstorm I want to make the CLI faster but I'm not sure where to start
+/brainstorm We need some kind of caching layer
+/brainstorm Rethink how we structure the test suite
+```
+
+### What Happens
+
+The **brainstormer agent** runs a multi-turn interview:
+
+1. **Explores the codebase** — Builds context about relevant code and patterns
+2. **Interviews you** — Asks probing questions (1-3 at a time) to uncover the real problem, constraints, and goals
+3. **Challenges assumptions** — Surfaces alternatives and simpler approaches you may not have considered
+4. **Generates ideas** — Brainstorms approaches collaboratively during the conversation
+5. **Synthesizes takeaways** — Writes a brainstorm summary to `.claude/agent-outputs/brainstorms/`
+
+The brainstormer uses extended thinking (Opus model) and follows a structured interview pattern: surface understanding, dig deeper, challenge and expand, then converge.
+
+### What You Get
+
+A brainstorm document containing:
+- **Problem Statement** — The *real* problem, not just the surface request
+- **Key Insights** — Non-obvious things that emerged from the discussion
+- **Decided Scope** — Must-have / should-have / won't-do breakdown
+- **Ideas Generated** — Selected approach and alternatives considered
+- **Open Questions** — Unknowns for planning to resolve
+- **Plan Prompt** — A ready-to-use prompt you can copy-paste directly into `/plan`
+
+### From Brainstorm to Plan
+
+Once the brainstorm is complete:
+1. Copy the **Plan Prompt** from the brainstorm output
+2. Run **`/plan <paste the plan prompt here>`**
+3. The planner will reference the brainstorm document for full context
 
 [Back to top](#top)
 
@@ -494,6 +570,7 @@ The `--no-session` flag excludes conversation context, useful for narrow, genera
 
 | Command | Purpose | Output Location |
 |---------|---------|-----------------|
+| `/brainstorm <topic>` | Brainstorm before planning | `agent-outputs/brainstorms/` |
 | `/plan <desc>` | Create implementation plan | `agent-outputs/plans/` |
 | `/implement Phase N from <path>` | Execute a plan phase | Modified source files |
 | `/review [target]` | Full review (style + substance + test quality) | `agent-outputs/reviews/` |
@@ -513,6 +590,7 @@ The `--no-session` flag excludes conversation context, useful for narrow, genera
 
 | Agent | When Used | What It Knows |
 |-------|-----------|---------------|
+| **brainstormer** | `/brainstorm` | Codebase exploration, interview techniques, scope discovery |
 | **planner** | `/plan` | Plan template, all development conventions |
 | **python-code-writer** | `/implement` | Frameworks, all code conventions |
 | **python-test-writer** | `/implement` | Testing conventions, pytest patterns |
@@ -579,9 +657,14 @@ See the `validate-code` skill for full usage and flags.
 - Run `/sync` to regenerate bundles
 - Check that `manifest.json` lists correct skill dependencies
 
+**Not sure what to plan:**
+- Use `/brainstorm` first to discover the real scope and constraints
+- The brainstorm output includes a ready-to-use plan prompt
+
 **Plan doesn't match what I want:**
 - Review the plan before `/implement`
 - Ask for revisions or create a new plan with clearer objective
+- Consider running `/brainstorm` first to clarify scope before planning
 
 **Implementation diverges from plan:**
 - Stop and run `/update-plan` to realign
