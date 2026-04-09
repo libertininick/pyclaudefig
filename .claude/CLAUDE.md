@@ -18,9 +18,6 @@ Guidance for Claude Code when working in this repository.
 
 ## Critical Rules
 
-> **PYTHON EXECUTION**: When running generated Python via Bash, use `run-python-safely` skill first.
-> Exceptions: `uv run pytest`, `ruff`, `ty check`, `uv run .claude/scripts/validate_code.py`, other standard CLI tools.
-
 1. **Approved frameworks only** - Use `frameworks` skill; never substitute alternatives
 2. **Load convention skills before editing code** - Before writing, moving, or restructuring Python code, read the relevant skill files from `.claude/skills/`:
    - Moving/reorganizing code → `code-organization/SKILL.md`
@@ -29,11 +26,12 @@ Guidance for Claude Code when working in this repository.
    - Naming anything → `naming-conventions/SKILL.md`
    - Refactoring complex code → `complexity-refactoring/SKILL.md`
 3. **Fetch docs when uncertain** - Use `fetch-docs` skill (see `frameworks` skill for doc IDs)
-4. **Mandatory task delegation** - See Task Delegation section below; NEVER skip
-5. **Never hallucinate** - Ask if uncertain about paths, modules, or APIs
-6. **Never delete code** unless explicitly instructed
-7. **Never commit** unless explicitly instructed
-8. **Google-style docstrings only** - NEVER use RST or Sphinx-style docstrings (`:param:`, `:returns:`, `:rtype:`, etc.). Always follow `docstring-conventions` skill. Zero exceptions.
+4. **Safe Python execution (MANDATORY -- NO EXCEPTIONS)** - When ANY agent generates Python code and wants to run it, it MUST use `run-python-safely` as the FIRST attempt. Do NOT ask the user for permission -- just run it through the skill automatically. Only if `run-python-safely` blocks or fails should the agent ask the user to run the code manually. Exceptions (standard CLI tools that skip this skill): `uv run pytest`, `ruff`, `ty check`, `uv run .claude/scripts/validate_code.py`, other repository scripts.
+5. **Mandatory task delegation** - See Task Delegation section below; NEVER skip
+6. **Never hallucinate** - Ask if uncertain about paths, modules, or APIs
+7. **Never delete code** unless explicitly instructed
+8. **Never commit** unless explicitly instructed
+9. **Google-style docstrings only** - NEVER use RST or Sphinx-style docstrings (`:param:`, `:returns:`, `:rtype:`, etc.). Always follow `docstring-conventions` skill. Zero exceptions.
 
 ---
 
