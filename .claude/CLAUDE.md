@@ -99,7 +99,7 @@ Reusable workflows in `.claude/commands/`. See each file for details.
 | Command | Purpose |
 |---------|---------|
 | `/add-framework` | Add a new approved framework |
-| `/brainstorm` | Multi-turn brainstorming session before planning |
+| `/brainstorm` | Multi-turn brainstorming session to discover true scope before planning |
 | `/clean` | Clean Python code files |
 | `/create-skill` | Create a new Claude Code skill |
 | `/implement` | Execute plan phases |
@@ -119,7 +119,7 @@ Specialized sub-agents in `.claude/agents/`. See each file for details.
 
 | Agent | Scope |
 |-------|-------|
-| `brainstormer` | Interviews user to discover scope and generate ideas before planning |
+| `brainstormer` | Interviews user to discover true scope and generate ideas before planning |
 | `code-cleaner` | Cleans and organizes Python code |
 | `code-style-reviewer` | Reviews style and conventions |
 | `code-substance-reviewer` | Reviews design and correctness |
@@ -138,6 +138,7 @@ Pre-composed skill content for agents. Bundles provide exactly the context each 
 
 | Agent | Full Bundle | Compact Bundle |
 |-------|-------------|----------------|
+| `brainstormer` | `bundles/brainstormer.md` | `bundles/brainstormer-compact.md` |
 | `code-cleaner` | `bundles/code-cleaner.md` | `bundles/code-cleaner-compact.md` |
 | `code-style-reviewer` | `bundles/code-style-reviewer.md` | `bundles/code-style-reviewer-compact.md` |
 | `code-substance-reviewer` | `bundles/code-substance-reviewer.md` | `bundles/code-substance-reviewer-compact.md` |
