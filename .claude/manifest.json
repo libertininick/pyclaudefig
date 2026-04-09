@@ -175,6 +175,13 @@
       ]
     },
     {
+      "name": "brainstormer",
+      "description": "Interviews user to discover true scope and generate ideas before planning",
+      "depends_on_skills": [
+        "write-markdown-output"
+      ]
+    },
+    {
       "name": "planner",
       "description": "Creates implementation plans",
       "depends_on_skills": [
@@ -279,6 +286,13 @@
       ],
       "depends_on_skills": [
         "validate-manifest"
+      ]
+    },
+    {
+      "name": "brainstorm",
+      "description": "Multi-turn brainstorming session to discover true scope before planning",
+      "depends_on_agents": [
+        "brainstormer"
       ]
     },
     {
